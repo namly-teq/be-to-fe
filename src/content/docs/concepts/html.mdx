@@ -1,0 +1,220 @@
+---
+title: HTML — Structure & Semantics
+description: HTML defines the structure of a web page. Learn the essential elements, semantics, and how to write markup that's meaningful.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## What Is HTML?
+
+HTML (HyperText Markup Language) defines the **structure and content** of a web page. It's not a programming language — it has no logic, no loops, no variables. It's a **declarative markup language**: you describe what things *are*, and the browser decides how to display them.
+
+<Aside type="tip" title="Backend analogy">
+Think of HTML as your **data schema** or **response body**. Just as you define the shape of your data with a class or struct, you define the shape of a page with HTML tags. The browser is the "renderer" that takes your schema and produces a visual representation.
+</Aside>
+
+---
+
+## The Document Structure
+
+Every HTML page has the same skeleton:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Metadata — not visible to users -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page Title</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Visible content goes here -->
+    <h1>Hello, World</h1>
+    <script src="app.js"></script>
+  </body>
+</html>
+```
+
+- `<head>` — metadata, CSS links, the title (not rendered in the page body)
+- `<body>` — everything the user sees
+- `<script>` at the end of `<body>` — so JS loads after HTML is parsed
+
+---
+
+## Essential Elements
+
+### Text Content
+
+```html
+<h1>Main heading</h1>    <!-- h1–h6, use one h1 per page -->
+<h2>Section heading</h2>
+<p>A paragraph of text.</p>
+<strong>Bold/important text</strong>
+<em>Italic/emphasized text</em>
+<br />                   <!-- line break (use sparingly) -->
+<hr />                   <!-- horizontal rule / section divider -->
+```
+
+### Links and Media
+
+```html
+<a href="https://example.com">External link</a>
+<a href="/about">Internal link</a>
+<img src="/avatar.png" alt="User avatar" />  <!-- alt is required for accessibility -->
+```
+
+### Lists
+
+```html
+<!-- Unordered list -->
+<ul>
+  <li>Item one</li>
+  <li>Item two</li>
+</ul>
+
+<!-- Ordered list -->
+<ol>
+  <li>First step</li>
+  <li>Second step</li>
+</ol>
+```
+
+### Containers
+
+```html
+<div class="card">Generic block container</div>
+<span class="highlight">Generic inline container</span>
+```
+
+### Forms
+
+```html
+<form action="/submit" method="POST">
+  <label for="email">Email</label>
+  <input type="email" id="email" name="email" required />
+
+  <label for="password">Password</label>
+  <input type="password" id="password" name="password" required />
+
+  <select name="role">
+    <option value="admin">Admin</option>
+    <option value="user">User</option>
+  </select>
+
+  <textarea name="bio" rows="4"></textarea>
+
+  <button type="submit">Submit</button>
+</form>
+```
+
+---
+
+## Semantic HTML — Why It Matters
+
+Semantic HTML means using elements that **describe their purpose**, not just their appearance. This matters for:
+- **Accessibility** — screen readers use semantics to describe the page
+- **SEO** — search engines understand page structure
+- **Maintainability** — code is easier to read and reason about
+
+| Non-semantic (avoid) | Semantic (prefer) | Why |
+|---|---|---|
+| `<div id="header">` | `<header>` | Marks page header |
+| `<div id="nav">` | `<nav>` | Marks navigation |
+| `<div id="main">` | `<main>` | Marks primary content |
+| `<div id="footer">` | `<footer>` | Marks footer |
+| `<div class="article">` | `<article>` | Self-contained content |
+| `<div class="sidebar">` | `<aside>` | Related but secondary content |
+| `<div class="section">` | `<section>` | Thematic grouping |
+
+### A Real Page Layout with Semantics
+
+```html
+<body>
+  <header>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <article>
+      <h1>My Blog Post</h1>
+      <p>Published on <time datetime="2026-05-07">May 7, 2026</time></p>
+      <p>Content goes here...</p>
+    </article>
+
+    <aside>
+      <h2>Related Posts</h2>
+      <!-- ... -->
+    </aside>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 My Site</p>
+  </footer>
+</body>
+```
+
+---
+
+## Attributes
+
+Attributes provide extra information about elements:
+
+```html
+<!-- Common attributes -->
+<div id="unique-id" class="card highlighted" style="color: red;">...</div>
+
+<!-- Data attributes — store custom data (accessible via JS) -->
+<div data-user-id="42" data-role="admin">...</div>
+<script>
+  const el = document.querySelector('[data-user-id="42"]');
+  console.log(el.dataset.userId); // "42"
+  console.log(el.dataset.role);   // "admin"
+</script>
+
+<!-- ARIA attributes — accessibility hints for screen readers -->
+<button aria-label="Close dialog" aria-expanded="false">✕</button>
+```
+
+---
+
+## HTML in React / JSX
+
+In React, you write **JSX** — which looks like HTML but has a few differences:
+
+| HTML | JSX |
+|---|---|
+| `class="..."` | `className="..."` |
+| `for="..."` | `htmlFor="..."` |
+| `<br>` | `<br />` (self-closing) |
+| `<input>` | `<input />` |
+| `onclick="..."` | `onClick={...}` (camelCase) |
+| Comments `<!-- -->` | `{/* comment */}` |
+
+```jsx
+// JSX — looks like HTML, compiles to React.createElement calls
+function Card({ title, children }) {
+  return (
+    <article className="card">
+      <h2>{title}</h2>
+      <div className="card-body">{children}</div>
+    </article>
+  );
+}
+```
+
+---
+
+## Key Takeaways
+
+- HTML defines **structure**, not style or behavior
+- Use **semantic elements** (`<header>`, `<main>`, `<article>`) over generic `<div>`s
+- Every `<img>` needs an `alt` attribute
+- Forms need `<label>` elements associated with their inputs (for accessibility)
+- In React, HTML attributes use **camelCase** (`className`, `onClick`)
+
+**Next: [CSS →](/concepts/css/)**

@@ -1,0 +1,216 @@
+---
+title: "Advanced Level: Frontend Architecture"
+description: Design scalable frontend systems — state management, routing, performance, and component architecture.
+sidebar:
+  order: 3
+---
+
+import { Aside, Steps, Badge } from '@astrojs/starlight/components';
+
+<Badge text="Level 3" variant="caution" size="large" /> Prerequisite: can build complete React features, comfortable with hooks.
+
+## Goal of This Level
+
+By the end of the advanced level, you'll be able to:
+- Design scalable component architectures
+- Manage global application state effectively
+- Implement client-side routing
+- Apply performance optimization techniques
+- Lead frontend technical decisions on a team
+
+**Time estimate:** 6–8 weeks (part-time, ~1 hour/day)
+
+---
+
+## Key Concepts to Learn
+
+### Global State Management
+
+Local `useState` works for a single component. But when **multiple components need to share state**, you need a different approach.
+
+**The options (from simple to complex):**
+
+| Solution | Use when | Analogy |
+|---|---|---|
+| Prop drilling | 1–2 levels deep, simple data | Passing config down the call stack |
+| React Context | Medium complexity, low-frequency updates | Dependency injection / service locator |
+| Zustand | Most apps, simple global store | Simple singleton service |
+| Redux Toolkit | Complex apps, time-travel debugging needed | Event sourcing / command pattern |
+
+```js
+// Zustand — minimal global store (recommended for most cases)
+import { create } from 'zustand';
+
+const useAuthStore = create((set) => ({
+  user: null,
+  setUser: (user) => set({ user }),
+  logout: () => set({ user: null }),
+}));
+
+// In any component, anywhere in the tree
+function Header() {
+  const { user, logout } = useAuthStore();
+  return <nav>{user ? <button onClick={logout}>Logout</button> : null}</nav>;
+}
+```
+
+<Aside type="tip" title="Backend analogy">
+A Zustand store is like a **singleton service** — one instance shared across the whole app. Components that use it are like **consumers** that subscribe to that service. When the store updates, only the subscribed components re-render.
+</Aside>
+
+### Client-Side Routing with React Router
+
+In a single-page app (SPA), routing happens **in the browser** — no full page reload. React Router intercepts navigation and renders the correct component.
+
+```jsx
+import { BrowserRouter, Routes, Route, Link, useParams } from 'react-router-dom';
+
+function App() {
+  return (
+    <BrowserRouter>
+      <nav>
+        <Link to="/">Home</Link>
+        <Link to="/users">Users</Link>
+      </nav>
+      <Routes>
+        <Route path="/"           element={<HomePage />} />
+        <Route path="/users"      element={<UserListPage />} />
+        <Route path="/users/:id"  element={<UserDetailPage />} />
+        <Route path="*"           element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+// URL params — like path variables in your REST API
+function UserDetailPage() {
+  const { id } = useParams(); // from /users/42
+  // fetch user by id...
+}
+```
+
+<Aside type="tip" title="Backend analogy">
+React Router's `<Route path="/users/:id">` is identical in concept to your backend route definitions (`@GetMapping("/users/{id}")`). The difference: your router renders a React component instead of calling a controller method.
+</Aside>
+
+### Custom Hooks — Reusable Logic
+
+Custom hooks let you extract and reuse stateful logic — like extracting a utility function, but for component logic.
+
+```js
+// A reusable hook for any API fetch
+function useFetch(url) {
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => { setData(data); setLoading(false); })
+      .catch(err => { setError(err.message); setLoading(false); });
+  }, [url]);
+
+  return { data, loading, error };
+}
+
+// Reuse in any component
+function UserList() {
+  const { data: users, loading, error } = useFetch('/api/users');
+  // ...
+}
+```
+
+### Performance Optimization
+
+| Technique | What it does | When to use |
+|---|---|---|
+| `React.memo` | Skip re-render if props unchanged | Expensive child components |
+| `useMemo` | Memoize computed values | Expensive calculations |
+| `useCallback` | Memoize function references | Functions passed as props |
+| Code splitting | Load components lazily | Large apps, rarely-visited pages |
+| Virtualization | Render only visible list items | Lists with 1000+ items |
+
+```jsx
+// Lazy load a heavy component
+const AdminPanel = React.lazy(() => import('./AdminPanel'));
+
+function App() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <AdminPanel />
+    </Suspense>
+  );
+}
+```
+
+<Aside type="caution" title="Don't optimize prematurely">
+Most performance issues in React come from uncontrolled re-renders and missing memoization. Profile first with React DevTools before adding `memo`/`useMemo` everywhere.
+</Aside>
+
+### Component Architecture Patterns
+
+| Pattern | Description | Use case |
+|---|---|---|
+| Container/Presentational | Separate data-fetching from rendering | Reusable UI components |
+| Compound Components | Components that share implicit state | Complex UI kits (tabs, accordion) |
+| Render Props / HOC | Share logic across components | Legacy pattern, mostly replaced by hooks |
+| Feature-based folders | Group by feature, not type | Large codebases |
+
+---
+
+## Skills to Acquire
+
+| Skill | Description |
+|---|---|
+| Global state with Zustand/Redux | Share state across components |
+| Client-side routing | Multi-page SPA with React Router |
+| Custom hooks | Extract and reuse component logic |
+| Protected routes | Auth-gated pages |
+| Code splitting | Lazy-load components and routes |
+| Performance profiling | React DevTools profiler |
+| Component API design | Designing reusable, well-documented components |
+
+---
+
+## Hands-on Practice
+
+### Mini Project: Full-featured SPA
+
+Build a React application with:
+1. **Authentication** — login/logout with JWT stored in memory (not localStorage)
+2. **Protected routes** — redirect to `/login` if not authenticated
+3. **Global state** — user session managed in Zustand
+4. **Multiple pages** — `/dashboard`, `/users`, `/users/:id`, `/settings`
+5. **CRUD operations** — create, read, update, delete with API
+6. **Loading + error states** — everywhere
+
+<Steps>
+1. Scaffold with Vite: `npm create vite@latest my-spa -- --template react`
+2. Install: `npm install react-router-dom zustand`
+3. Set up routing structure with public and private routes
+4. Implement auth store with Zustand
+5. Build 3–4 pages with real API calls (use your own backend or a mock API)
+6. Profile with React DevTools and optimize at least one re-render issue
+</Steps>
+
+---
+
+## Expected Outcomes
+
+After completing this level you should be able to:
+
+✅ Design and implement global state architecture  
+✅ Build a multi-page SPA with protected routes  
+✅ Extract and share logic through custom hooks  
+✅ Identify and fix React performance issues  
+✅ Architect a scalable component hierarchy for a real product  
+✅ Lead frontend technical discussions and review PRs effectively  
+
+---
+
+**Next: [Key Concepts — HTML →](/concepts/html/)**

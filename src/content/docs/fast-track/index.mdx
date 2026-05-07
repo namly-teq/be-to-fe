@@ -1,0 +1,179 @@
+---
+title: Fast-track Learning Plan
+description: A focused, efficient learning plan for busy backend developers — what to skip, what to prioritize, and a 30/60/90-day roadmap with mini-projects.
+---
+
+import { Aside, Steps, Card, CardGrid } from '@astrojs/starlight/components';
+
+## The Backend Developer Advantage
+
+You don't start from zero. You already understand:
+- HTTP, REST, JSON, async operations
+- Data structures, algorithms, systems design
+- Code quality, testing, and maintainability
+- How the frontend consumes your APIs
+
+This means you can **skip a lot of theory** and go straight to practice. A backend developer can become productively frontend-capable much faster than someone with no programming background.
+
+---
+
+## What to Skip (Initially)
+
+Don't spend time on these when starting out:
+
+| Skip for now | Why | When to revisit |
+|---|---|---|
+| CSS preprocessors (Sass, Less) | CSS custom properties + utility classes are sufficient | When working on large design systems |
+| CSS-in-JS (styled-components, Emotion) | Complex, being replaced by CSS Modules + Tailwind | If the team uses it |
+| Redux | Zustand covers 90% of use cases with 10% of the complexity | When you join a team already using it |
+| Next.js / SSR | Adds complexity; learn SPA first | When SEO or performance is a requirement |
+| Testing (initially) | Get productive first, add tests second | After building 2–3 features |
+| Build tool internals (Webpack, Rollup) | Vite handles this for you | When optimizing production builds |
+| Web Components | Niche; not commonly used in typical React apps | If specifically required |
+| GraphQL | Adds a layer on top of HTTP; learn REST integration first | When your team/API uses GraphQL |
+
+---
+
+## What to Focus On (in order)
+
+<Steps>
+1. **HTML + CSS basics** — 3–5 days. Build a static page. Learn the box model, flexbox.
+2. **Vanilla JavaScript in the browser** — 3–5 days. DOM, events, fetch, async/await.
+3. **React fundamentals** — 1–2 weeks. Components, props, useState, useEffect.
+4. **Build a complete CRUD feature** — 1 week. Forms, API calls, loading/error states.
+5. **Client-side routing** — 2–3 days. React Router, URL params, protected routes.
+6. **Global state** — 2–3 days. Zustand store, auth state.
+7. **TypeScript** — 1 week (ongoing). Add types to your project incrementally.
+8. **TanStack Query** — 2–3 days. Replace manual fetch + useEffect with proper server state management.
+</Steps>
+
+---
+
+## 30 / 60 / 90 Day Roadmap
+
+### Day 1–30: Get Your Footing
+
+**Goal**: Understand how the browser works, build simple UIs, write your first React component.
+
+**Week 1–2: HTML, CSS, JavaScript**
+- Read: [Frontend Fundamentals](/fundamentals/)
+- Practice: Build a user directory page in plain HTML/CSS/JS
+- Practice: Build a todo list (no framework)
+- Tool: Open DevTools every day — inspect real pages you use
+
+**Week 3–4: React Basics**
+- Read: [React concepts](/concepts/react/)
+- Install: `npm create vite@latest my-app -- --template react`
+- Practice: Rebuild your vanilla JS todo list in React
+- Practice: Build a component that fetches and displays a list from an API
+- Milestone: You can build a stateful component that talks to an API
+
+<Aside type="tip" title="Day 30 check">
+By day 30, you should be able to: write an HTML/CSS page, add interactivity with JavaScript, and build a React component with props, state, and an API call. If not — spend another week on fundamentals, don't rush forward.
+</Aside>
+
+---
+
+### Day 31–60: Build Features
+
+**Goal**: Build complete CRUD features end-to-end in React. Work on a real project.
+
+**Week 5–6: Complete Feature Development**
+- Read: [API Integration](/concepts/api-integration/)
+- Practice: React dashboard — list, create, edit, delete with a real (or mock) API
+- Add: form validation, loading states, error handling
+- Add: React Router (multi-page navigation)
+
+**Week 7–8: Project Structure + Quality**
+- Read: [Project Structure](/practical/project-structure/)
+- Read: [Common Pitfalls](/practical/pitfalls/)
+- Refactor: organize your project into `features/`, extract custom hooks
+- Add: TypeScript types for all props and API responses
+- Add: a simple Zustand auth store
+
+<Aside type="tip" title="Day 60 check">
+By day 60, you should be able to build a multi-page React app with auth, API integration, and proper error handling. You should be able to read and understand a typical production frontend codebase.
+</Aside>
+
+---
+
+### Day 61–90: Go Deep
+
+**Goal**: Understand architecture, performance, and professional practices. Contribute to real frontend work.
+
+**Week 9–10: Advanced Patterns**
+- Read: [Advanced roadmap](/roadmap/advanced/)
+- Learn: TanStack Query — replace all manual fetch/useEffect with `useQuery`/`useMutation`
+- Learn: Performance basics — React DevTools profiler, lazy loading
+- Practice: Add TanStack Query to your existing project
+
+**Week 11–12: Real-world Contribution**
+- Read: [Best Practices](/best-practices/)
+- Read: [Collaboration Guide](/practical/collaboration/)
+- Do: Pick up a real frontend task in your team's codebase
+- Do: Review a frontend PR using the checklist from the Best Practices page
+- Do: Design an API endpoint with the frontend consumption pattern in mind
+
+<Aside type="tip" title="Day 90 check">
+By day 90, you should be able to: work independently on frontend features, make architectural decisions about state management and component design, review frontend code for quality and security issues, and design backend APIs with the frontend perspective in mind.
+</Aside>
+
+---
+
+## Suggested Mini-Projects
+
+These are designed to build specific skills without being too large:
+
+<CardGrid>
+  <Card title="Project 1: User Directory" icon="person">
+    Plain HTML/CSS/JS. Fetch users from JSONPlaceholder. Display in a grid with search filtering.
+    
+    **Skills**: DOM, fetch, events, CSS layout
+  </Card>
+  <Card title="Project 2: React Todo App" icon="list-format">
+    React + Vite. Local state only (no API). Add/complete/delete items. Filter by status.
+    
+    **Skills**: useState, events, list rendering, conditional rendering
+  </Card>
+  <Card title="Project 3: React CRUD Dashboard" icon="setting">
+    React + Vite + your own backend (or mock API). Full create/read/update/delete with loading states.
+    
+    **Skills**: useEffect, forms, API integration, error handling
+  </Card>
+  <Card title="Project 4: Full SPA with Auth" icon="approve-check-circle">
+    React + React Router + Zustand + TanStack Query. Login, protected routes, multi-page app.
+    
+    **Skills**: routing, global state, auth, query caching
+  </Card>
+</CardGrid>
+
+---
+
+## Learning Resources
+
+### Documentation (best learning material)
+- [react.dev](https://react.dev) — official React docs, excellent tutorials
+- [MDN Web Docs](https://developer.mozilla.org) — HTML, CSS, JS reference
+- [Vite docs](https://vite.dev/guide/) — project setup
+- [Starlight docs](https://starlight.astro.build) — if building a documentation site
+
+### Interactive Practice
+- [javascript.info](https://javascript.info) — the best free JS book
+- [flexboxfroggy.com](https://flexboxfroggy.com) — learn flexbox by playing
+- [cssgridgarden.com](https://cssgridgarden.com) — learn CSS Grid by playing
+
+### Tools to Install
+- **React DevTools** — Chrome/Firefox extension
+- **VS Code extensions**: ESLint, Prettier, TypeScript support, Tailwind IntelliSense
+
+---
+
+## Key Takeaway
+
+You don't need to learn everything at once. The fastest path:
+
+> **Fundamentals (2 weeks) → React CRUD (4 weeks) → Real project (ongoing)**
+
+Everything else — advanced state, performance, TypeScript depth, testing — comes naturally while working on real problems. The goal is to get to "working on real code" as fast as possible, then learn from doing.
+
+**You've got this. Start with [Frontend Fundamentals →](/fundamentals/)**

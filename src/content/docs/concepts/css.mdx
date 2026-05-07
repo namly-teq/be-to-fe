@@ -1,0 +1,268 @@
+---
+title: CSS — Styling & Layout
+description: CSS controls how HTML looks. Learn the box model, flexbox, grid, and responsive design.
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## What Is CSS?
+
+CSS (Cascading Style Sheets) controls the **visual presentation** of HTML. Every element on screen — its size, color, position, font, spacing — is controlled by CSS.
+
+<Aside type="tip" title="Backend analogy">
+CSS is like **templating or serialization configuration** for your UI. Just as you can control how an object serializes to JSON (field names, formatting), CSS controls how an HTML element renders visually. The "cascading" part means styles can be inherited and overridden — like configuration inheritance.
+</Aside>
+
+---
+
+## How CSS Works
+
+### Selectors — Targeting Elements
+
+```css
+/* By tag */
+h1 { color: #333; }
+
+/* By class (most common) */
+.card { background: white; }
+
+/* By ID (use sparingly) */
+#main-nav { position: sticky; top: 0; }
+
+/* Descendant — any .btn inside a .card */
+.card .btn { font-size: 14px; }
+
+/* Direct child */
+.nav > li { display: inline; }
+
+/* Pseudo-class — element state */
+button:hover  { background: #0056b3; }
+input:focus   { border-color: blue; }
+li:first-child { font-weight: bold; }
+```
+
+### Specificity — Which Rule Wins?
+
+When multiple rules target the same element, specificity determines which one wins:
+
+| Selector type | Specificity weight |
+|---|---|
+| Inline style (`style="..."`) | Highest |
+| ID (`#id`) | High |
+| Class (`.class`), pseudo-class | Medium |
+| Tag (`div`, `p`) | Low |
+
+```css
+/* These all target the same element — which wins? */
+p { color: black; }          /* tag = low */
+.text { color: blue; }       /* class = medium → wins over tag */
+#intro { color: red; }       /* ID = high → wins over class */
+```
+
+<Aside type="caution" title="Common confusion">
+Never use `!important` to "force" a style. It creates specificity debt that's very hard to undo. Instead, restructure your selectors.
+</Aside>
+
+---
+
+## The Box Model
+
+Every HTML element is a rectangular box with four layers:
+
+```
+┌──────────────────────────────────┐
+│              margin              │  ← space outside the element
+│  ┌────────────────────────────┐  │
+│  │           border           │  │  ← visible border
+│  │  ┌──────────────────────┐  │  │
+│  │  │        padding       │  │  │  ← space inside, around content
+│  │  │  ┌────────────────┐  │  │  │
+│  │  │  │    content     │  │  │  │  ← text, images, child elements
+│  │  │  └────────────────┘  │  │  │
+│  │  └──────────────────────┘  │  │
+│  └────────────────────────────┘  │
+└──────────────────────────────────┘
+```
+
+```css
+.box {
+  width: 300px;
+  padding: 16px;        /* inside spacing */
+  border: 1px solid #ccc;
+  margin: 24px auto;    /* outside spacing; auto centers horizontally */
+
+  /* box-sizing: border-box means width includes padding+border (recommended) */
+  box-sizing: border-box;
+}
+```
+
+<Aside type="tip" title="Best practice">
+Always add `box-sizing: border-box` globally — it makes width calculations predictable. Most modern CSS resets include this.
+
+```css
+*, *::before, *::after { box-sizing: border-box; }
+```
+</Aside>
+
+---
+
+## Layout: Flexbox
+
+Flexbox is for **one-dimensional layout** (a row or a column). It's the most-used layout tool.
+
+```css
+.container {
+  display: flex;
+  flex-direction: row;      /* default: horizontal */
+  justify-content: space-between; /* horizontal alignment */
+  align-items: center;      /* vertical alignment */
+  gap: 16px;                /* spacing between items */
+  flex-wrap: wrap;          /* allow items to wrap to next line */
+}
+
+.item {
+  flex: 1;                  /* grow to fill available space equally */
+}
+```
+
+### Flexbox Cheat Sheet
+
+| Property | Values | Effect |
+|---|---|---|
+| `flex-direction` | `row` / `column` | Main axis direction |
+| `justify-content` | `flex-start` / `center` / `space-between` / `space-around` | Align on main axis |
+| `align-items` | `stretch` / `center` / `flex-start` / `flex-end` | Align on cross axis |
+| `gap` | `8px`, `1rem` | Space between items |
+| `flex-wrap` | `wrap` / `nowrap` | Allow items to wrap |
+| `flex` | `1`, `0 0 200px` | Item grow/shrink/basis |
+
+---
+
+## Layout: Grid
+
+CSS Grid is for **two-dimensional layout** (rows AND columns). Use it for page-level layouts and complex grids.
+
+```css
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);  /* 3 equal columns */
+  gap: 16px;
+}
+
+/* Named grid areas */
+.layout {
+  display: grid;
+  grid-template-areas:
+    "header header"
+    "sidebar main"
+    "footer footer";
+  grid-template-columns: 250px 1fr;
+}
+
+.header  { grid-area: header; }
+.sidebar { grid-area: sidebar; }
+.main    { grid-area: main; }
+.footer  { grid-area: footer; }
+```
+
+---
+
+## Responsive Design
+
+CSS allows styling to change based on screen size using **media queries**.
+
+```css
+/* Mobile-first approach: start with small screens, then add breakpoints */
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;     /* 1 column on mobile */
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .cards {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns on tablet */
+  }
+}
+
+@media (min-width: 1200px) {
+  .cards {
+    grid-template-columns: repeat(3, 1fr); /* 3 columns on desktop */
+  }
+}
+```
+
+### Common Breakpoints
+
+| Name | Min-width | Devices |
+|---|---|---|
+| Mobile | (default) | Phones |
+| Tablet | `768px` | Tablets, large phones |
+| Desktop | `1024px` | Laptops |
+| Wide | `1280px` | Large monitors |
+
+---
+
+## CSS Units
+
+| Unit | What it is | Use case |
+|---|---|---|
+| `px` | Absolute pixels | Borders, icon sizes |
+| `%` | Relative to parent width | Widths, paddings |
+| `rem` | Relative to root font size | Font sizes, spacing |
+| `em` | Relative to parent font size | Component-relative sizing |
+| `vh` / `vw` | % of viewport height / width | Full-page sections |
+| `fr` | Fraction of grid space | CSS Grid columns |
+
+<Aside type="tip" title="Recommendation">
+Use `rem` for font sizes and spacing (scales well with user browser settings). Use `px` for fixed sizes like borders and icons. Avoid mixing units unpredictably.
+</Aside>
+
+---
+
+## CSS in React Projects
+
+In React, you have several options for styling:
+
+<Tabs>
+  <TabItem label="CSS Modules">
+    ```css
+    /* Button.module.css */
+    .button { background: blue; color: white; padding: 8px 16px; }
+    .primary { background: #0070f3; }
+    ```
+    ```jsx
+    import styles from './Button.module.css';
+    <button className={`${styles.button} ${styles.primary}`}>Click</button>
+    ```
+    **Pros:** Scoped classes, no naming conflicts, no runtime cost.
+  </TabItem>
+  <TabItem label="Tailwind CSS">
+    ```jsx
+    <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      Click
+    </button>
+    ```
+    **Pros:** No context-switching between files, consistent design tokens.
+  </TabItem>
+  <TabItem label="Inline styles">
+    ```jsx
+    <div style={{ color: 'red', fontSize: '16px' }}>Text</div>
+    ```
+    **Pros:** Dynamic values, no class name needed. **Cons:** No pseudo-classes, verbose.
+  </TabItem>
+</Tabs>
+
+---
+
+## Key Takeaways
+
+- CSS selects elements and applies visual properties
+- Specificity determines which rule wins when multiple rules conflict
+- The **box model** (content → padding → border → margin) controls spacing
+- **Flexbox** for 1D layouts (nav bars, card rows); **Grid** for 2D layouts (page layouts)
+- Use **media queries** for responsive design; start mobile-first
+- Prefer `rem` for font sizes, `px` for fixed sizes
+
+**Next: [JavaScript in the Browser →](/concepts/javascript/)**

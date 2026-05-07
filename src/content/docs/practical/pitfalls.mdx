@@ -1,0 +1,315 @@
+---
+title: Common Pitfalls for Backend Developers
+description: The most frequent mistakes backend developers make when writing frontend code — and how to avoid them.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Introduction
+
+Backend developers are strong at logic, data modeling, and systems thinking. But frontend has its own set of traps — many of which only become obvious after you've fallen into them. This page documents the most common ones.
+
+---
+
+## 1. Mutating State Directly
+
+**The mistake:** Treating React state like a regular variable and modifying it in place.
+
+```jsx
+// ❌ WRONG — directly mutating state
+const [user, setUser] = useState({ name: 'Alice', role: 'admin' });
+
+function updateName() {
+  user.name = 'Bob'; // mutation — React won't detect this
+  // No re-render happens. UI stays showing "Alice".
+}
+
+// ❌ WRONG — pushing to array state
+const [items, setItems] = useState([]);
+items.push(newItem); // mutation — no re-render
+```
+
+```jsx
+// ✅ CORRECT — always create a new value
+setUser(prev => ({ ...prev, name: 'Bob' }));
+setItems(prev => [...prev, newItem]);
+setItems(prev => prev.filter(item => item.id !== deletedId));
+```
+
+<Aside type="caution">
+React detects state changes by comparing **object references** (like `===`). If you mutate the existing object, the reference stays the same — React thinks nothing changed and skips the re-render.
+</Aside>
+
+---
+
+## 2. Ignoring Loading and Error States
+
+**The mistake:** Writing the happy path only — assuming data is always available.
+
+```jsx
+// ❌ WRONG — crashes on initial render while data is loading
+function UserProfile({ userId }) {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    fetch(`/api/users/${userId}`).then(r => r.json()).then(setUser);
+  }, [userId]);
+
+  return <h1>{user.name}</h1>; // crash: user is null until fetch resolves
+}
+```
+
+```jsx
+// ✅ CORRECT — handle all three states
+function UserProfile({ userId }) {
+  const [user, setUser]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/users/${userId}`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(data => { setUser(data); setLoading(false); })
+      .catch(err => { setError(err.message); setLoading(false); });
+  }, [userId]);
+
+  if (loading) return <Spinner />;
+  if (error)   return <ErrorMessage message={error} />;
+  if (!user)   return null;
+
+  return <h1>{user.name}</h1>;
+}
+```
+
+---
+
+## 3. Using Array Index as Key
+
+**The mistake:** Using the array index as the `key` prop in lists.
+
+```jsx
+// ❌ WRONG — index keys break when list order changes
+{users.map((user, index) => (
+  <UserCard key={index} user={user} />
+))}
+```
+
+```jsx
+// ✅ CORRECT — use a stable unique ID
+{users.map(user => (
+  <UserCard key={user.id} user={user} />
+))}
+```
+
+<Aside type="caution">
+When using index as key, React can't correctly reconcile the list when items are added, removed, or reordered. This causes **stale state bugs** — input values, focus, and animations get mixed up between items.
+</Aside>
+
+---
+
+## 4. Not Cleaning Up Effects
+
+**The mistake:** Starting async operations or subscriptions in `useEffect` without cleanup.
+
+```jsx
+// ❌ WRONG — race condition: if userId changes quickly, 
+// the slower first request might overwrite the second request's result
+useEffect(() => {
+  fetch(`/api/users/${userId}`)
+    .then(r => r.json())
+    .then(setUser); // might set stale data after component has moved on
+}, [userId]);
+```
+
+```jsx
+// ✅ CORRECT — cancel stale requests with a flag
+useEffect(() => {
+  let cancelled = false;
+
+  fetch(`/api/users/${userId}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!cancelled) setUser(data); // only update if still relevant
+    });
+
+  return () => { cancelled = true; }; // cleanup runs when userId changes or component unmounts
+}, [userId]);
+```
+
+---
+
+## 5. Prop Drilling
+
+**The mistake:** Passing props through many intermediate components that don't use the data themselves.
+
+```jsx
+// ❌ Prop drilling — AppLayout and Sidebar don't need user, but pass it down
+function App() {
+  const [user] = useState(currentUser);
+  return <AppLayout user={user} />;
+}
+
+function AppLayout({ user }) {
+  return <Sidebar user={user} />;          // just passing it through
+}
+
+function Sidebar({ user }) {
+  return <UserAvatar user={user} />;       // just passing it through
+}
+
+function UserAvatar({ user }) {
+  return <img src={user.avatarUrl} />;    // finally uses it
+}
+```
+
+```jsx
+// ✅ Use Context or a global store for data needed deep in the tree
+const UserContext = createContext(null);
+
+function App() {
+  const [user] = useState(currentUser);
+  return (
+    <UserContext.Provider value={user}>
+      <AppLayout />
+    </UserContext.Provider>
+  );
+}
+
+function UserAvatar() {
+  const user = useContext(UserContext); // access directly, no drilling
+  return <img src={user.avatarUrl} />;
+}
+```
+
+---
+
+## 6. Fetching Data in Every Component
+
+**The mistake:** Making the same API call in every component that needs the data, instead of fetching once and sharing.
+
+```jsx
+// ❌ Both components fetch the same /api/user endpoint independently
+function Header() {
+  const [user] = useFetch('/api/user');
+  return <span>{user?.name}</span>;
+}
+
+function Sidebar() {
+  const [user] = useFetch('/api/user');
+  return <img src={user?.avatar} />;
+}
+```
+
+```jsx
+// ✅ Fetch once, share via context, global store, or TanStack Query (handles deduplication)
+// TanStack Query automatically deduplicates identical concurrent requests
+function Header() {
+  const { data: user } = useQuery({ queryKey: ['user'], queryFn: fetchUser });
+  return <span>{user?.name}</span>;
+}
+
+function Sidebar() {
+  const { data: user } = useQuery({ queryKey: ['user'], queryFn: fetchUser });
+  // Same queryKey → uses cached data, no duplicate request
+  return <img src={user?.avatar} />;
+}
+```
+
+---
+
+## 7. Putting Secrets in Frontend Code
+
+**The mistake:** Adding API keys, tokens, or secrets to frontend JavaScript or `.env` files.
+
+```js
+// ❌ WRONG — these are bundled into the JavaScript and visible to everyone
+const STRIPE_SECRET_KEY = 'sk_live_...'; // Anyone can read this
+const DB_PASSWORD = 'mysecretpassword';  // Client-side code has no DB access anyway
+
+// VITE_ env vars are also public — anyone can read them in the bundle
+const API_SECRET = import.meta.env.VITE_API_SECRET; // ❌ don't do this
+```
+
+**Rule**: Anything that touches sensitive operations must go through your **backend API**. The frontend calls your backend; your backend holds the secrets.
+
+---
+
+## 8. Missing `e.preventDefault()` on Form Submit
+
+**The mistake:** Forgetting to prevent the default form submission, which causes a full page reload.
+
+```jsx
+// ❌ WRONG — page reloads, state is lost, your handler runs but then the page refreshes
+function LoginForm() {
+  const handleSubmit = async () => { // ← no event param
+    await login(email, password);
+  };
+  return <form onSubmit={handleSubmit}>...</form>;
+}
+```
+
+```jsx
+// ✅ CORRECT — prevent default browser form submission
+function LoginForm() {
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // ← stop the page reload
+    await login(email, password);
+  };
+  return <form onSubmit={handleSubmit}>...</form>;
+}
+```
+
+---
+
+## 9. Overusing `useEffect`
+
+**The mistake:** Reaching for `useEffect` for every piece of logic, including derived state.
+
+```jsx
+// ❌ WRONG — useEffect to derive state (unnecessary complexity)
+const [users, setUsers] = useState([]);
+const [filteredUsers, setFilteredUsers] = useState([]);
+
+useEffect(() => {
+  setFilteredUsers(users.filter(u => u.active)); // unnecessary effect
+}, [users]);
+```
+
+```jsx
+// ✅ CORRECT — derive state directly during render
+const [users, setUsers] = useState([]);
+const filteredUsers = users.filter(u => u.active); // compute inline, no effect needed
+```
+
+<Aside type="tip">
+Only use `useEffect` for **synchronizing with external systems** (API calls, DOM, timers, subscriptions). Derived values, computed data, and event responses don't need `useEffect`.
+</Aside>
+
+---
+
+## 10. Not Using the Network Tab for API Debugging
+
+**The mistake:** Adding `console.log` everywhere when the Network tab already shows you everything.
+
+When an API call isn't working:
+1. Open DevTools → Network tab
+2. Filter for Fetch/XHR requests
+3. Look at the request: correct URL? correct method? correct headers? correct body?
+4. Look at the response: what status code? what error message in the body?
+
+This gives you all the information in seconds — no console.log needed.
+
+---
+
+## Key Takeaways
+
+- **Never mutate state** — always use the setter with a new value
+- **Always handle loading and error states** — happy-path-only code will crash
+- **Use stable IDs as keys**, not array indices
+- **Clean up effects** with cancellation flags or AbortController
+- **Avoid deep prop drilling** — use Context or global state for widely-shared data
+- **Never put secrets in frontend code** — route them through your backend
+- **Derive values during render** — don't use `useEffect` for simple computed state
+
+**Next: [Collaborating with Frontend Teams →](/practical/collaboration/)**

@@ -1,0 +1,353 @@
+---
+title: API Integration
+description: How to connect your React frontend to backend APIs — fetch, axios, error handling, loading states, and auth.
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## You Already Know the Hard Part
+
+You built the API. You know the endpoints, the request/response shapes, the auth mechanism. API integration in the frontend is just the other end of the same pipe — calling HTTP endpoints from JavaScript and handling the results.
+
+<Aside type="tip" title="Backend analogy">
+Frontend API calls are like using an **HTTP client library** in your backend — `HttpClient` in Java, `requests` in Python, `fetch` in Node.js. You send a request, await the response, and handle success or error. The concepts are identical; only the syntax and environment differ.
+</Aside>
+
+---
+
+## The Fetch API
+
+`fetch` is the browser's built-in HTTP client. It returns a Promise.
+
+### GET Request
+
+```js
+async function getUsers() {
+  const response = await fetch('/api/users');
+
+  // fetch does NOT throw on 4xx/5xx — check response.ok
+  if (!response.ok) {
+    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+  }
+
+  const users = await response.json();
+  return users;
+}
+```
+
+<Aside type="caution" title="Common mistake: fetch doesn't throw on error status">
+Unlike most HTTP clients, `fetch` only rejects its Promise on **network failures** (no connection, DNS failure). A 404 or 500 response is considered "successful" by fetch — you must check `response.ok` or `response.status` manually.
+</Aside>
+
+### POST / PUT / DELETE
+
+```js
+// POST with JSON body
+async function createUser(userData) {
+  const response = await fetch('/api/users', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(userData),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// PUT
+async function updateUser(id, updates) {
+  const response = await fetch(`/api/users/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+
+// DELETE
+async function deleteUser(id) {
+  const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  // 204 No Content — no body to parse
+}
+```
+
+---
+
+## Axios — A Better HTTP Client
+
+Axios is a popular third-party library that improves on `fetch`:
+- Automatically parses JSON responses
+- **Throws on 4xx/5xx** (unlike fetch)
+- Interceptors for auth headers and error handling
+- Better TypeScript support
+
+```bash
+npm install axios
+```
+
+```js
+import axios from 'axios';
+
+// Create a configured instance
+const api = axios.create({
+  baseURL: 'http://localhost:8080/api',
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000, // 10 second timeout
+});
+
+// Request interceptor — add auth token to every request
+api.interceptors.request.use(config => {
+  const token = getAuthToken(); // from your auth store
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Response interceptor — handle auth errors globally
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      // Token expired — redirect to login
+      logout();
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Usage — clean and simple
+const users      = await api.get('/users');
+const newUser    = await api.post('/users', { name: 'Alice', email: 'alice@example.com' });
+const updated    = await api.put(`/users/${id}`, { name: 'Bob' });
+await api.delete(`/users/${id}`);
+```
+
+---
+
+## API Integration in React
+
+A complete pattern for fetching and displaying API data in React:
+
+<Tabs>
+  <TabItem label="useEffect pattern">
+    ```jsx
+    import { useState, useEffect } from 'react';
+
+    function UserList() {
+      const [users, setUsers]     = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [error, setError]     = useState(null);
+
+      useEffect(() => {
+        let cancelled = false; // prevent state updates on unmounted component
+
+        async function load() {
+          try {
+            const res = await fetch('/api/users');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            if (!cancelled) setUsers(data);
+          } catch (err) {
+            if (!cancelled) setError(err.message);
+          } finally {
+            if (!cancelled) setLoading(false);
+          }
+        }
+
+        load();
+        return () => { cancelled = true; }; // cleanup
+      }, []);
+
+      if (loading) return <LoadingSpinner />;
+      if (error)   return <ErrorMessage message={error} />;
+
+      return (
+        <ul>
+          {users.map(u => <li key={u.id}>{u.name}</li>)}
+        </ul>
+      );
+    }
+    ```
+  </TabItem>
+  <TabItem label="Custom hook">
+    ```js
+    // hooks/useFetch.js — reusable for any endpoint
+    import { useState, useEffect } from 'react';
+
+    export function useFetch(url) {
+      const [data, setData]       = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError]     = useState(null);
+
+      useEffect(() => {
+        let cancelled = false;
+
+        setLoading(true);
+        setError(null);
+
+        fetch(url)
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then(data => { if (!cancelled) { setData(data); setLoading(false); } })
+          .catch(err => { if (!cancelled) { setError(err.message); setLoading(false); } });
+
+        return () => { cancelled = true; };
+      }, [url]);
+
+      return { data, loading, error };
+    }
+
+    // Usage
+    function UserList() {
+      const { data: users, loading, error } = useFetch('/api/users');
+      // ...
+    }
+    ```
+  </TabItem>
+  <TabItem label="TanStack Query (recommended)">
+    ```bash
+    npm install @tanstack/react-query
+    ```
+    ```jsx
+    import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+    // Fetching — handles loading, error, caching, refetching automatically
+    function UserList() {
+      const { data: users, isLoading, error } = useQuery({
+        queryKey: ['users'],
+        queryFn: () => fetch('/api/users').then(r => r.json()),
+      });
+
+      if (isLoading) return <LoadingSpinner />;
+      if (error)     return <ErrorMessage message={error.message} />;
+
+      return <ul>{users.map(u => <li key={u.id}>{u.name}</li>)}</ul>;
+    }
+
+    // Mutation — for POST/PUT/DELETE
+    function CreateUserForm() {
+      const queryClient = useQueryClient();
+
+      const mutation = useMutation({
+        mutationFn: (userData) => fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData),
+        }).then(r => r.json()),
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['users'] }); // refetch list
+        },
+      });
+
+      return (
+        <button
+          onClick={() => mutation.mutate({ name: 'Alice' })}
+          disabled={mutation.isPending}
+        >
+          {mutation.isPending ? 'Creating...' : 'Create User'}
+        </button>
+      );
+    }
+    ```
+  </TabItem>
+</Tabs>
+
+---
+
+## Handling Authentication
+
+### JWT Bearer Token
+
+```js
+// Store token in memory (not localStorage — XSS risk)
+let authToken = null;
+
+// After login:
+authToken = responseData.accessToken;
+
+// In every authenticated request:
+fetch('/api/protected', {
+  headers: {
+    'Authorization': `Bearer ${authToken}`,
+  },
+});
+```
+
+### HttpOnly Cookie (Recommended)
+
+When your backend sets a `Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict` header, the browser:
+- Automatically sends the cookie with every same-origin request
+- Prevents JavaScript from reading the cookie (protects against XSS)
+
+```js
+// With HttpOnly cookies, you don't need to manage the token at all:
+fetch('/api/protected', {
+  credentials: 'include', // sends cookies with the request
+});
+```
+
+<Aside type="tip" title="Recommendation">
+Use **HttpOnly cookies** for auth tokens. They're more secure than `localStorage` or in-memory tokens because JavaScript can't access them. Configure your backend to set the cookie on login and clear it on logout.
+</Aside>
+
+---
+
+## Loading, Error, and Empty States
+
+Every component that fetches data must handle all four states:
+
+```jsx
+function DataView() {
+  const { data, loading, error } = useFetch('/api/items');
+
+  // 1. Loading
+  if (loading) return <Spinner />;
+
+  // 2. Error
+  if (error) return (
+    <div className="error">
+      <p>Failed to load data: {error}</p>
+      <button onClick={retry}>Retry</button>
+    </div>
+  );
+
+  // 3. Empty
+  if (!data || data.length === 0) return (
+    <div className="empty">
+      <p>No items found.</p>
+    </div>
+  );
+
+  // 4. Success
+  return <ItemList items={data} />;
+}
+```
+
+<Aside type="caution" title="Common mistake: not handling loading/error states">
+This is one of the most common mistakes backend developers make in frontend. Always handle loading and error states — users should never see a blank page with no feedback.
+</Aside>
+
+---
+
+## Key Takeaways
+
+- `fetch` doesn't throw on 4xx/5xx — **always check `response.ok`**
+- Axios throws on error responses and supports interceptors — prefer it for real apps
+- Use interceptors to attach auth tokens and handle 401 globally
+- For React, use **TanStack Query** for serious API integration — it handles caching, refetching, and mutations out of the box
+- Always handle all 4 data states: loading, error, empty, success
+- Store auth tokens in **HttpOnly cookies**, not `localStorage`
+
+**Next: [Project Structure →](/practical/project-structure/)**

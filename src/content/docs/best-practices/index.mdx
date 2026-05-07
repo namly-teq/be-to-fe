@@ -1,0 +1,370 @@
+---
+title: Best Practices & Engineering Standards
+description: Clean code, reusable components, performance, maintainability, and accessibility — the engineering standards for professional frontend development.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Clean Code in Frontend
+
+The same clean code principles you apply to backend code apply here. Frontend-specific additions:
+
+### Component Naming and Size
+
+```jsx
+// ✅ Descriptive, purposeful names
+function UserProfileCard({ user, onEdit }) { ... }
+function SubmitOrderButton({ orderId, disabled }) { ... }
+function ErrorMessage({ message, onRetry }) { ... }
+
+// ❌ Vague names
+function Component({ data, handler }) { ... }
+function Btn({ x }) { ... }
+```
+
+**Rule**: If a component exceeds ~100-150 lines, consider splitting it. Extract sub-components or custom hooks.
+
+### Single Responsibility
+
+```jsx
+// ❌ Component doing too much
+function UserPage() {
+  // fetches users, handles auth, formats dates, manages pagination,
+  // renders the full page including nav and footer...
+}
+
+// ✅ Each component does one thing
+function UserPage() {
+  return (
+    <PageLayout>
+      <UserListContainer />
+    </PageLayout>
+  );
+}
+
+function UserListContainer() {
+  const { users, loading, error } = useUsers();
+  return <UserList users={users} loading={loading} error={error} />;
+}
+
+function UserList({ users, loading, error }) {
+  // only renders — no data fetching
+}
+```
+
+### Prop Hygiene
+
+```jsx
+// ✅ Explicit, typed props
+function Button({ label, onClick, variant = 'primary', disabled = false }) { ... }
+
+// ❌ Spreading all props — hides the component's interface
+function Button(props) {
+  return <button {...props} />;
+}
+
+// ✅ Document non-obvious props with a comment or TypeScript type
+type ButtonProps = {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary' | 'danger';
+  disabled?: boolean;
+};
+```
+
+---
+
+## Reusability
+
+### Building Reusable Components
+
+A reusable component:
+- Has no knowledge of the business domain
+- Receives all data via props
+- Communicates only via callbacks
+- Is styled without hardcoded business colors or copy
+
+```jsx
+// ✅ Reusable — no business logic, pure UI
+function DataTable({ columns, rows, onRowClick, loading }) {
+  if (loading) return <Spinner />;
+  return (
+    <table>
+      <thead>
+        <tr>{columns.map(col => <th key={col.key}>{col.label}</th>)}</tr>
+      </thead>
+      <tbody>
+        {rows.map(row => (
+          <tr key={row.id} onClick={() => onRowClick(row)}>
+            {columns.map(col => <td key={col.key}>{row[col.key]}</td>)}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+// Use with any data
+<DataTable columns={userColumns} rows={users} onRowClick={handleUserSelect} loading={loading} />
+<DataTable columns={orderColumns} rows={orders} onRowClick={handleOrderSelect} loading={loading} />
+```
+
+### Reusable Hooks
+
+Extract and share logic, not just UI:
+
+```js
+// useLocalStorage — reusable across any component that needs persistent state
+function useLocalStorage(key, initialValue) {
+  const [value, setValue] = useState(() => {
+    try {
+      const stored = localStorage.getItem(key);
+      return stored ? JSON.parse(stored) : initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  const setStoredValue = (newValue) => {
+    setValue(newValue);
+    localStorage.setItem(key, JSON.stringify(newValue));
+  };
+
+  return [value, setStoredValue];
+}
+
+// useDebounce — delay state updates (e.g., for search inputs)
+function useDebounce(value, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+```
+
+---
+
+## Performance Basics
+
+### Avoid Unnecessary Re-renders
+
+```jsx
+// Use React.memo to skip re-rendering when props haven't changed
+const UserCard = React.memo(function UserCard({ user, onDelete }) {
+  return (
+    <div>
+      <h2>{user.name}</h2>
+      <button onClick={() => onDelete(user.id)}>Delete</button>
+    </div>
+  );
+});
+
+// Use useCallback to stabilize function references passed as props
+const handleDelete = useCallback((id) => {
+  setUsers(prev => prev.filter(u => u.id !== id));
+}, []);
+```
+
+<Aside type="caution" title="Don't over-optimize">
+Only add `React.memo` and `useCallback` when you've confirmed a re-render problem via the React Profiler. Premature memoization adds complexity without benefit.
+</Aside>
+
+### Lazy-Load Routes and Heavy Components
+
+```jsx
+import { lazy, Suspense } from 'react';
+
+// Code-split at the route level
+const AdminDashboard = lazy(() => import('./features/admin/AdminDashboard'));
+const ReportsPage    = lazy(() => import('./features/reports/ReportsPage'));
+
+function App() {
+  return (
+    <Suspense fallback={<PageSpinner />}>
+      <Routes>
+        <Route path="/admin"   element={<AdminDashboard />} />
+        <Route path="/reports" element={<ReportsPage />} />
+      </Routes>
+    </Suspense>
+  );
+}
+```
+
+### Image Optimization
+
+```jsx
+// Specify width and height to prevent layout shift
+<img
+  src="/hero.jpg"
+  alt="Hero image"
+  width={1200}
+  height={600}
+  loading="lazy"     // defer off-screen images
+/>
+```
+
+---
+
+## Maintainability
+
+### Centralize Configuration
+
+```js
+// lib/constants.js — one place for all magic values
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+export const PAGE_SIZE    = 20;
+export const MAX_UPLOAD   = 5 * 1024 * 1024; // 5MB
+
+// lib/routes.js — centralized route paths
+export const ROUTES = {
+  HOME:        '/',
+  LOGIN:       '/login',
+  USERS:       '/users',
+  USER_DETAIL: (id) => `/users/${id}`,
+};
+```
+
+### TypeScript (Highly Recommended)
+
+TypeScript prevents entire categories of bugs at compile time:
+
+```tsx
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'user' | 'viewer';
+};
+
+type UserCardProps = {
+  user: User;
+  onDelete: (id: number) => void;
+};
+
+function UserCard({ user, onDelete }: UserCardProps) {
+  return (
+    <div>
+      <h2>{user.name}</h2>
+      {/* TypeScript error if you typo a field name */}
+      <button onClick={() => onDelete(user.id)}>Delete</button>
+    </div>
+  );
+}
+```
+
+<Aside type="tip" title="Backend analogy">
+TypeScript for JavaScript is like **static typing in Java or Go** — it catches type mismatches at compile time, makes refactoring safe, and documents the API contracts between components. If you're used to typed backends, TypeScript will feel natural.
+</Aside>
+
+---
+
+## Accessibility Basics
+
+Accessibility (a11y) ensures your UI works for all users, including those using screen readers or keyboard navigation. It's also often a legal requirement.
+
+### Semantic HTML First
+
+```html
+<!-- ✅ Semantic — screen readers know this is a button -->
+<button onClick={handleDelete}>Delete</button>
+
+<!-- ❌ Non-semantic — no keyboard support, no screen reader role -->
+<div onClick={handleDelete}>Delete</div>
+```
+
+### Keyboard Navigation
+
+```jsx
+// Interactive elements must be keyboard accessible
+// button, a[href], input, select, textarea are keyboard-accessible by default
+
+// If you must use a div as interactive, add role and keyboard handler:
+<div
+  role="button"
+  tabIndex={0}
+  onClick={handleClick}
+  onKeyDown={(e) => e.key === 'Enter' && handleClick()}
+>
+  Click me
+</div>
+```
+
+### Images Must Have Alt Text
+
+```jsx
+// ✅ Descriptive alt
+<img src={user.avatar} alt={`${user.name}'s profile picture`} />
+
+// ✅ Decorative image — empty alt, screen reader skips it
+<img src="/decorative-wave.svg" alt="" role="presentation" />
+
+// ❌ Missing alt — screen reader reads the filename
+<img src={user.avatar} />
+```
+
+### Form Labels
+
+```jsx
+// ✅ Label associated with input via htmlFor + id
+<label htmlFor="email">Email address</label>
+<input type="email" id="email" name="email" />
+
+// ✅ Or wrap input in label
+<label>
+  Email address
+  <input type="email" name="email" />
+</label>
+
+// ❌ No label — screen reader can't describe the input
+<input type="email" placeholder="Email" />
+```
+
+### Color Contrast
+
+Text must have sufficient contrast against its background:
+- Normal text: minimum **4.5:1** contrast ratio
+- Large text (18pt+): minimum **3:1** contrast ratio
+
+Use [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) to verify.
+
+---
+
+## Best Practices Checklist
+
+### Code Quality
+- [ ] Components have clear, descriptive names
+- [ ] No component exceeds ~150 lines
+- [ ] Each component has a single responsibility
+- [ ] Props are explicit, not spread indiscriminately
+- [ ] TypeScript types defined for all props and API responses
+
+### State Management
+- [ ] State is never mutated directly
+- [ ] State is as local as possible (not everything is global)
+- [ ] Loading and error states are handled everywhere data is fetched
+- [ ] Effects have cleanup functions where needed
+
+### Reusability
+- [ ] Shared UI components live in `components/` with no business logic
+- [ ] Repeated logic is extracted into custom hooks
+- [ ] API call functions are centralized in feature-specific API modules
+
+### Performance
+- [ ] Routes are code-split with `React.lazy`
+- [ ] Images have `width`, `height`, and `loading="lazy"` where appropriate
+- [ ] Lists use stable IDs as keys
+
+### Security
+- [ ] No secrets in frontend code or env vars
+- [ ] `innerHTML` is never used with user-provided data
+- [ ] Auth tokens are in HttpOnly cookies, not localStorage
+
+### Accessibility
+- [ ] All images have descriptive `alt` text (or `alt=""` if decorative)
+- [ ] All form inputs have associated `<label>` elements
+- [ ] Interactive elements are keyboard-accessible
+- [ ] Color contrast meets WCAG AA standards
+
+**Next: [Fast-track Learning Plan →](/fast-track/)**

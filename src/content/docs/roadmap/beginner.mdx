@@ -1,0 +1,169 @@
+---
+title: "Beginner Level: 0 → Basic Understanding"
+description: Start here. Build your first HTML/CSS/JS page and understand how the browser renders a UI.
+sidebar:
+  order: 1
+---
+
+import { Aside, Steps, Badge } from '@astrojs/starlight/components';
+
+<Badge text="Level 1" variant="note" size="large" /> Your starting point — no frontend experience required.
+
+## Goal of This Level
+
+By the end of the beginner level, you'll be able to:
+- Write a basic HTML page with CSS styling
+- Handle user interactions with vanilla JavaScript
+- Fetch data from an API and display it on screen
+- Understand how the browser renders a page
+
+**Time estimate:** 2–4 weeks (part-time, ~1 hour/day)
+
+---
+
+## Key Concepts to Learn
+
+### HTML — The Skeleton
+
+HTML defines the **structure and content** of a page. Think of it as a JSON schema made visible.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>My App</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Hello, World</h1>
+    <p>My first paragraph.</p>
+    <button id="load-btn">Load Users</button>
+    <ul id="user-list"></ul>
+    <script src="app.js"></script>
+  </body>
+</html>
+```
+
+Key tags to know:
+- `<div>`, `<span>` — generic containers (block vs inline)
+- `<h1>`–`<h6>` — headings
+- `<p>` — paragraph
+- `<a href="...">` — links
+- `<button>` — clickable button
+- `<input>`, `<form>` — user input
+- `<ul>`, `<li>` — lists
+- `<img src="...">` — images
+
+### CSS — The Skin
+
+CSS controls how HTML looks. Every element has a **box model**: content → padding → border → margin.
+
+```css
+/* Select elements by tag, class, or ID */
+h1 { color: #333; }
+.card { background: white; padding: 16px; border-radius: 8px; }
+#load-btn { background: blue; color: white; cursor: pointer; }
+
+/* Layout — flexbox is your friend */
+.container {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+```
+
+### JavaScript — The Brain
+
+JavaScript makes pages interactive. In the browser, it can:
+- React to user events
+- Modify the DOM
+- Make HTTP requests
+- Store data in memory
+
+```js
+// Wait for DOM to be ready
+document.addEventListener('DOMContentLoaded', () => {
+
+  const button = document.getElementById('load-btn');
+  const list   = document.getElementById('user-list');
+
+  // Attach a click handler — like registering an event listener in your backend
+  button.addEventListener('click', async () => {
+    // Fetch from your API
+    const res   = await fetch('https://jsonplaceholder.typicode.com/users');
+    const users = await res.json();
+
+    // Render each user as a list item
+    list.innerHTML = users
+      .map(u => `<li>${u.name} — ${u.email}</li>`)
+      .join('');
+  });
+
+});
+```
+
+<Aside type="tip" title="Backend analogy">
+`addEventListener('click', handler)` is the browser's equivalent of registering a **message consumer** or **event handler** in an event-driven system. The browser maintains an event queue; your handlers run when the relevant event fires.
+</Aside>
+
+---
+
+## Skills to Acquire
+
+| Skill | Description |
+|---|---|
+| Write semantic HTML | Use the right tags for the right purpose |
+| Apply CSS basics | Box model, colors, fonts, basic layout |
+| Use flexbox | Align and distribute elements in a row/column |
+| Handle DOM events | `click`, `input`, `submit` |
+| Use `fetch` | GET and POST requests with async/await |
+| Render API data | Display JSON response as HTML list/table |
+| Use browser DevTools | Inspect elements, view console errors, monitor network requests |
+
+---
+
+## Hands-on Practice
+
+### Mini Project: User Directory Page
+
+Build a static HTML page that:
+1. Shows a "Load Users" button
+2. On click, fetches `https://jsonplaceholder.typicode.com/users`
+3. Renders users as cards with name and email
+4. Has a basic CSS layout (centered, cards in a grid)
+
+<Steps>
+1. Create `index.html`, `style.css`, `app.js` in a folder
+2. Open `index.html` in Chrome — use DevTools (F12) to inspect and debug
+3. Write HTML structure first, then style with CSS, then add JS behavior
+4. Test: open Network tab, click the button, verify the API call appears
+5. Stretch goal: add a search input that filters the displayed users
+</Steps>
+
+### Additional Practice
+
+- Build a **counter** (increment/decrement buttons, display count)
+- Build a **todo list** (add items, mark complete, delete)
+- Build a **form with validation** (required fields, email format check)
+
+---
+
+## Expected Outcomes
+
+After completing this level you should be able to:
+
+✅ Explain what HTML, CSS, and JavaScript each do  
+✅ Write a static web page from scratch  
+✅ Add interactivity with event listeners  
+✅ Fetch data from a REST API and render it as HTML  
+✅ Use browser DevTools to inspect elements and debug errors  
+✅ Understand what the DOM is and how JavaScript manipulates it  
+
+---
+
+## What's Next?
+
+Once you're comfortable building simple pages in plain HTML/CSS/JS, move on to React — the component-based framework that makes building complex UIs manageable.
+
+**Next: [Intermediate Level →](/roadmap/intermediate/)**

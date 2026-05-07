@@ -1,0 +1,219 @@
+---
+title: Reading Frontend Code
+description: How to navigate unfamiliar React codebases — trace data flow, understand component trees, and follow state changes.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+## The Challenge
+
+Frontend code is often harder to read than backend code because:
+- **No linear execution flow** — UI is event-driven; there's no single "main path"
+- **Multiple abstraction layers** — JSX, props, hooks, context all interleave
+- **State is spread out** — local state, global state, URL state, server state all coexist
+- **Render vs. effect** — some code runs on render, some on events, some async
+
+This guide gives you a systematic approach to understanding any React codebase.
+
+---
+
+## Step 1: Find the Entry Point
+
+```
+index.html → main.jsx → App.jsx
+```
+
+```jsx
+// main.jsx — always starts here
+import { createRoot } from 'react-dom/client';
+import App from './App';
+
+createRoot(document.getElementById('root')).render(<App />);
+```
+
+Then look at `App.jsx` — it usually contains the **router** and **providers** (auth, theme, query client):
+
+```jsx
+// App.jsx — typical structure
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/"           element={<HomePage />} />
+            <Route path="/users"      element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
+            <Route path="/users/:id"  element={<ProtectedRoute><UserDetailPage /></ProtectedRoute>} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
+<Aside type="tip" title="Backend analogy">
+`App.jsx` is like your **application bootstrap** file — it sets up middleware (providers), registers routes, and starts the app. Read it like you'd read `main.go`, `Application.java`, or `app.py`.
+</Aside>
+
+---
+
+## Step 2: Trace a Feature End-to-End
+
+Pick a specific feature (e.g., "the user list page") and trace it from URL to data to render.
+
+<Steps>
+1. **Find the route** — which URL maps to which component? (in `App.jsx` or router file)
+2. **Find the page component** — e.g., `UsersPage.jsx`
+3. **Find the data source** — what hook or API call fetches the data?
+4. **Follow the props** — how does data flow from the data hook to the rendered UI?
+5. **Find event handlers** — what happens when the user clicks a button?
+</Steps>
+
+### Example Trace
+
+```
+URL: /users
+  → <UsersPage />
+      → const { users, loading } = useUsers()     ← data hook
+          → calls getUsers() → fetch('/api/users') ← API call
+      → <UserList users={users} onDelete={remove} />  ← prop drilling
+          → users.map(u => <UserCard user={u} onDelete={onDelete} />)
+              → <button onClick={() => onDelete(user.id)}>Delete</button>
+                  → calls remove(id) in useUsers()
+                      → deleteUser(id) → fetch DELETE /api/users/42
+                      → setUsers(prev => prev.filter(u => u.id !== id))
+                          → React re-renders with updated list
+```
+
+Reading code this way — following the data from source to view and back — makes any React codebase understandable.
+
+---
+
+## Step 3: Understand the State Architecture
+
+Ask these questions when reading a codebase:
+
+| Question | Where to look |
+|---|---|
+| What's the global state? | `store/` folder, Zustand/Redux files |
+| How does auth work? | `AuthProvider`, auth store, API interceptors |
+| Where is API state? | TanStack Query hooks, or `useEffect` + `useState` |
+| Where is URL state? | `useSearchParams()`, `useParams()` |
+| Where is form state? | `useState` in form component, or React Hook Form |
+
+---
+
+## Reading JSX — Parsing the Template
+
+JSX can be dense. Break it down visually:
+
+```jsx
+function UserCard({ user, onDelete, isAdmin }) {
+  return (
+    // 1. Root element with conditional class
+    <div className={`card ${isAdmin ? 'card-admin' : ''}`}>
+
+      {/* 2. Always rendered */}
+      <h2>{user.name}</h2>
+      <p className="email">{user.email}</p>
+
+      {/* 3. Conditionally rendered — only if user has a role */}
+      {user.role && (
+        <span className="badge">{user.role}</span>
+      )}
+
+      {/* 4. List rendering */}
+      <ul className="tags">
+        {user.tags.map(tag => (
+          <li key={tag.id}>{tag.name}</li>
+        ))}
+      </ul>
+
+      {/* 5. Rendered only for admins, with event handler */}
+      {isAdmin && (
+        <button onClick={() => onDelete(user.id)}>
+          Delete
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+Pattern recognition:
+- `{condition && <Component />}` — render if condition is truthy
+- `{condition ? <A /> : <B />}` — render A or B
+- `{array.map(item => <Item key={item.id} ... />)}` — render a list
+- `{/* ... */}` — JSX comment (inside JSX, use this not `// ...`)
+
+---
+
+## Reading Custom Hooks
+
+Hooks are extracted logic. Read them like functions:
+
+```js
+// What does this hook do?
+function useUsers(filters) {
+  // Input: filters object
+  // Output: { users, loading, error, remove }
+
+  const [users, setUsers] = useState([]);       // internal state
+  const [loading, setLoading] = useState(true); // loading state
+  const [error, setError] = useState(null);     // error state
+
+  // Side effect: fetch when filters change
+  useEffect(() => {
+    fetchUsers(filters)                         // API call
+      .then(setUsers)
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [filters]);
+
+  // Action function exposed to consumers
+  const remove = async (id) => {
+    await deleteUser(id);
+    setUsers(prev => prev.filter(u => u.id !== id)); // optimistic update
+  };
+
+  return { users, loading, error, remove };    // public API of this hook
+}
+```
+
+<Aside type="tip" title="How to read a hook">
+Read a custom hook like a **class with a public API**: the function body is the constructor (sets up state), `useEffect` calls are initializers/watchers, and the return value is the public interface. The dependency arrays in `useEffect` tell you what causes re-execution.
+</Aside>
+
+---
+
+## Using React DevTools
+
+Install the [React DevTools](https://react.dev/learn/react-developer-tools) browser extension, then in DevTools:
+
+- **Components tab** — browse the component tree, inspect props and state of any component
+- **Profiler tab** — record renders and find what's re-rendering and why
+
+```
+React DevTools → Components tab
+  → Click any component to see:
+      - Current props
+      - Current state (useState values)
+      - Context values
+      - Which component rendered it
+```
+
+This is the equivalent of adding `console.log` to every function — but visual and non-destructive.
+
+---
+
+## Key Takeaways
+
+- Start at `main.jsx` → `App.jsx` → find the router
+- Trace a feature: URL → page component → data hook → API call → render
+- Ask where state lives: local, global, URL, or server cache
+- JSX patterns: `{condition && ...}`, `{a ? b : c}`, `{array.map(...)}`
+- Read custom hooks like class constructors with a public return API
+- Use React DevTools to inspect the live component tree and state
+
+**Next: [Debugging UI →](/practical/debugging/)**

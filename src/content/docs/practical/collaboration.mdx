@@ -1,0 +1,245 @@
+---
+title: Collaborating with Frontend Teams
+description: How to work effectively with frontend developers — API contracts, code reviews, shared vocabulary, and bridging the gap.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## The Backend–Frontend Partnership
+
+As a backend developer learning frontend, you're in a unique position: you understand both sides of the stack. This section covers how to use that understanding to collaborate more effectively with frontend teams — and what frontend developers wish their backend colleagues knew.
+
+---
+
+## API Contract Design — Think from the Frontend Perspective
+
+The #1 source of friction between backend and frontend teams is poorly designed APIs. As someone who now understands both sides, you can design APIs that are genuinely easy for frontends to consume.
+
+### Shape Responses for Frontend Needs
+
+```json5
+// ❌ Bad: forces the frontend to join/enrich data client-side
+GET /api/orders/42
+{
+  "orderId": 42,
+  "customerId": 7,
+  "productIds": [101, 102]
+}
+
+// ✅ Good: return what the frontend needs to render the view, already composed
+GET /api/orders/42
+{
+  "id": 42,
+  "customer": { "id": 7, "name": "Alice Chen", "email": "alice@example.com" },
+  "items": [
+    { "id": 101, "name": "Widget A", "price": 9.99, "quantity": 2 },
+    { "id": 102, "name": "Widget B", "price": 19.99, "quantity": 1 }
+  ],
+  "total": 39.97,
+  "status": "shipped",
+  "createdAt": "2026-05-07T10:00:00Z"
+}
+```
+
+### Consistent Response Shapes
+
+Frontend developers write code that expects a consistent structure. Help them by being predictable:
+
+```json5
+// ✅ Consistent list response
+{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "total": 150,
+    "totalPages": 8
+  }
+}
+
+// ✅ Consistent error response
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed",
+    "fields": {
+      "email": "Must be a valid email address",
+      "password": "Must be at least 8 characters"
+    }
+  }
+}
+```
+
+<Aside type="tip" title="Field naming">
+Use `camelCase` for JSON field names — it maps directly to JavaScript variables without transformation. Avoid `snake_case` (needs conversion), `PascalCase` (reserved for classes in JS), or inconsistent mixing.
+</Aside>
+
+### Timestamps
+
+Always return timestamps as **ISO 8601 strings** (e.g., `"2026-05-07T10:00:00Z"`). JavaScript's `Date` constructor parses these natively:
+
+```js
+const date = new Date("2026-05-07T10:00:00Z");
+date.toLocaleDateString(); // renders in user's locale
+```
+
+---
+
+## Working with Designs
+
+Frontend developers often work from design mockups (Figma, Sketch). Here's how to interpret them:
+
+- **Spacing** is usually in multiples of 4 or 8 (4px grid system)
+- **Colors** in designs map to CSS custom properties or Tailwind classes
+- **Typography** sizes follow a scale (12, 14, 16, 18, 24, 32, 48...)
+- **Components** in Figma (buttons, cards, inputs) map 1:1 to React components
+
+When implementing a design, ask:
+- Are there states not shown in the mockup? (loading, error, empty, disabled)
+- What happens on mobile? (responsive breakpoints)
+- What are the hover/focus/active states?
+
+---
+
+## Reviewing Frontend Pull Requests
+
+When you review frontend PRs as a backend developer, here are the key things to check:
+
+### Security
+
+```jsx
+// ❌ XSS risk — user input in innerHTML
+element.innerHTML = userInput;
+
+// ❌ Sensitive data in localStorage
+localStorage.setItem('authToken', token);
+
+// ❌ Hardcoded secrets
+const API_KEY = 'sk-live-...';
+```
+
+### State Management
+
+```jsx
+// ❌ State mutation
+state.items.push(newItem);
+user.name = 'Bob';
+
+// ❌ Missing cleanup in effects
+useEffect(() => {
+  const sub = subscribe(handler);
+  // no cleanup!
+}, []);
+```
+
+### Performance
+
+```jsx
+// ❌ Fetching in render (not in effect or event handler)
+function Component() {
+  fetch('/api/data'); // runs on every render
+  return <div />;
+}
+
+// ❌ Missing keys or index keys in lists
+items.map((item, i) => <Item key={i} item={item} />);
+```
+
+### API calls
+
+```jsx
+// ❌ Not handling response.ok check
+const data = await fetch('/api/users').then(r => r.json());
+
+// ❌ No loading/error states
+function UserList() {
+  const [users] = useState([]);
+  useEffect(() => { fetch(...).then(r => r.json()).then(setUsers); }, []);
+  return <ul>{users.map(...)}</ul>; // renders empty on load, crashes on error
+}
+```
+
+---
+
+## Establishing API Contracts Early
+
+Before building either side, agree on:
+
+1. **Endpoints and HTTP methods** — `GET /api/users`, `POST /api/users`, etc.
+2. **Request shape** — what fields, types, and validation rules
+3. **Response shape** — what fields are returned on success
+4. **Error shape** — what the error object looks like
+5. **Auth mechanism** — JWT bearer token? Cookie? What header?
+6. **Pagination style** — page/pageSize? cursor-based?
+
+Document this in an **OpenAPI (Swagger) spec** — both teams can work from it, and the frontend can use it to generate TypeScript types.
+
+```yaml
+# openapi.yaml
+paths:
+  /users:
+    get:
+      summary: List users
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/User' }
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+```
+
+---
+
+## Shared Vocabulary
+
+| Backend term | Frontend equivalent |
+|---|---|
+| Controller / handler | Component (+ event handler) |
+| Service | Custom hook / store action |
+| DTO | Props interface / API response type |
+| Middleware | React Context provider / interceptor |
+| Session / auth token | Auth store + cookie/token |
+| Request body validation | Form validation (Zod, Yup) |
+| Pagination | Page state + URL query params |
+| Cache | TanStack Query cache / memoized state |
+
+---
+
+## What Frontend Developers Appreciate
+
+From the backend, these things make frontend development much smoother:
+
+✅ **Consistent error responses** — always the same shape, with a useful `message`  
+✅ **Field-level validation errors** — map directly to form field error display  
+✅ **Camel-cased JSON fields** — no transformation needed in JS  
+✅ **ISO timestamps** — parse natively in JavaScript  
+✅ **Correct HTTP status codes** — 201 for created, 204 for no content, 422 for validation errors  
+✅ **CORS configured correctly** — before frontend starts, not after  
+✅ **API docs / Swagger** — frontend can explore and mock without waiting  
+✅ **Pagination metadata included** — `total`, `totalPages` in every list response  
+
+---
+
+## Key Takeaways
+
+- Design API responses around **what the frontend needs to render**, not just your data model
+- Use consistent response and error shapes — frontend code depends on predictability
+- Use `camelCase` JSON fields and ISO 8601 timestamps
+- Set up CORS before frontend development starts
+- Write an OpenAPI spec early — it's the contract both teams build against
+- When reviewing frontend PRs, focus on: XSS risks, state mutation, missing cleanup, API error handling
+
+**Next: [Best Practices →](/best-practices/)**

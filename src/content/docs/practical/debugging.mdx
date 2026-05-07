@@ -1,0 +1,255 @@
+---
+title: Debugging UI Issues
+description: A practical guide to debugging frontend problems — browser DevTools, React DevTools, network debugging, and common error messages.
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## The Frontend Debugging Toolkit
+
+Unlike backend debugging (log files, debuggers, profilers on your server), frontend debugging happens primarily **in the browser**. The browser's built-in DevTools are your most powerful tool.
+
+Open DevTools: **F12** (Windows/Linux) or **Cmd+Option+I** (Mac)
+
+---
+
+## Browser DevTools — Tab by Tab
+
+### Console Tab
+
+Your first stop for errors and logging.
+
+```js
+// Levels
+console.log('Debug info', someVariable);
+console.warn('Something suspicious');
+console.error('Something broke');
+console.table(arrayOfObjects); // displays as a table — very useful
+console.group('API response');
+console.log(response);
+console.groupEnd();
+```
+
+**What to look for:**
+- **Red errors** — uncaught exceptions, failed resource loads, CORS errors
+- **Yellow warnings** — React key warnings, deprecated API usage
+- **Failed fetch** — network errors will appear here
+
+<Aside type="tip" title="Pro tip">
+Type directly in the Console to query and interact with the live page:
+```js
+document.querySelector('.user-name').textContent // read a DOM value
+$0.classList  // inspect the currently selected element (from Elements tab)
+```
+</Aside>
+
+### Elements Tab
+
+Inspect and modify the DOM and CSS in real time.
+
+<Steps>
+1. **Right-click any element on page → Inspect** to jump directly to it in the DOM
+2. **Click an element** in the Elements panel to see its CSS in the Styles pane
+3. **Double-click** a value to edit it live (changes don't persist on reload)
+4. **Computed tab** — see the final resolved CSS values after cascade
+5. **Box model diagram** — hover to see margin, padding, border dimensions
+</Steps>
+
+**Common uses:**
+- Why isn't my CSS applying? → Check Computed tab for the final value and which rule won
+- Why is there extra space? → Check margin/padding in the box model diagram
+- What class does this element have? → `$0.className` in Console after selecting it
+
+### Network Tab
+
+Monitor all HTTP requests — equivalent to reading server access logs.
+
+```
+Filter: XHR / Fetch  ← shows only API calls
+```
+
+Click any request to see:
+- **Headers** — request/response headers, status code
+- **Payload** — request body (what you sent)
+- **Response** — response body (what you received)
+- **Timing** — how long each phase took
+
+<Aside type="tip" title="Debugging API calls">
+If your API call seems broken, check the Network tab first:
+1. Is the request being made at all? (If not: check your `useEffect` dependencies)
+2. What URL is it hitting? (Wrong base URL? Missing path params?)
+3. What status code did it return? (401 = auth issue, 404 = wrong URL, 500 = server error)
+4. What does the response body say? (Error message from your backend)
+</Aside>
+
+**Preserve log**: Enable "Preserve log" to keep requests visible across page navigations.
+
+### Application Tab
+
+Inspect cookies, localStorage, sessionStorage:
+
+```
+Application → Storage → Local Storage → your origin
+Application → Storage → Cookies → your origin
+```
+
+Useful for:
+- Checking if an auth token was stored correctly
+- Clearing stale state for testing
+- Inspecting cookie attributes (HttpOnly, SameSite, Secure)
+
+---
+
+## React DevTools
+
+Install: [react.dev/learn/react-developer-tools](https://react.dev/learn/react-developer-tools)
+
+### Components Tab
+
+Navigate the component tree and inspect state/props of any component:
+
+```
+App
+  └─ Router
+       └─ UsersPage
+            └─ UserList
+                 ├─ UserCard (user: {id:1, name:"Alice"}, onDelete: fn)
+                 ├─ UserCard (user: {id:2, name:"Bob"}, onDelete: fn)
+                 └─ UserCard (user: {id:3, name:"Carol"}, onDelete: fn)
+```
+
+Click any component to see its live **props** and **state** (hooks). You can even edit state values directly to test UI behavior.
+
+### Profiler Tab
+
+Record a session and analyze what re-renders during user interactions:
+
+<Steps>
+1. Click **Record** (circle button)
+2. Perform the action you want to profile (click a button, type in input, etc.)
+3. Click **Stop**
+4. Examine the flame graph — each bar is a re-render, width = render time
+5. Click a bar to see **why** the component re-rendered (props/state/context change)
+</Steps>
+
+<Aside type="tip" title="Backend analogy">
+The React Profiler is like **query explain plans** or an **APM trace** — it shows you which components are "slow" and why, just like you'd investigate a slow SQL query or an expensive API endpoint.
+</Aside>
+
+---
+
+## Common Errors and Fixes
+
+<Tabs>
+  <TabItem label="Cannot read properties of undefined">
+    ```
+    TypeError: Cannot read properties of undefined (reading 'name')
+    ```
+    **Cause**: Trying to access a property on `undefined` — typically because async data hasn't loaded yet.
+
+    ```jsx
+    // ❌ Crashes if user is null/undefined during initial render
+    function UserCard({ user }) {
+      return <h2>{user.name}</h2>;
+    }
+
+    // ✅ Guard against null/undefined
+    function UserCard({ user }) {
+      if (!user) return null;
+      return <h2>{user.name}</h2>;
+    }
+
+    // ✅ Or use optional chaining
+    return <h2>{user?.name ?? 'Unknown'}</h2>;
+    ```
+  </TabItem>
+  <TabItem label="Each child in a list should have a unique key">
+    ```
+    Warning: Each child in a list should have a unique "key" prop.
+    ```
+    **Cause**: Missing or non-unique `key` prop in a `.map()`.
+
+    ```jsx
+    // ❌ No key
+    {users.map(u => <UserCard user={u} />)}
+
+    // ❌ Index as key — breaks when list order changes
+    {users.map((u, i) => <UserCard key={i} user={u} />)}
+
+    // ✅ Stable unique ID as key
+    {users.map(u => <UserCard key={u.id} user={u} />)}
+    ```
+  </TabItem>
+  <TabItem label="Too many re-renders">
+    ```
+    Error: Too many re-renders. React limits the number of renders to prevent an infinite loop.
+    ```
+    **Cause**: Calling a state setter during render (not in an event handler or effect).
+
+    ```jsx
+    // ❌ Calling setState during render
+    function Bad() {
+      const [count, setCount] = useState(0);
+      setCount(1); // called every render → infinite loop
+      return <div>{count}</div>;
+    }
+
+    // ✅ Call setState in an event handler
+    function Good() {
+      const [count, setCount] = useState(0);
+      return <button onClick={() => setCount(1)}>{count}</button>;
+    }
+    ```
+  </TabItem>
+  <TabItem label="CORS error">
+    ```
+    Access to fetch at 'http://localhost:8080/api/users' from origin 
+    'http://localhost:3000' has been blocked by CORS policy
+    ```
+    **Cause**: Your backend isn't sending CORS headers.
+
+    **Fix**: Configure CORS on your backend:
+    ```java
+    // Spring Boot
+    @CrossOrigin(origins = "http://localhost:3000")
+
+    // Or globally
+    @Bean
+    public CorsFilter corsFilter() { ... }
+    ```
+    ```js
+    // Express
+    app.use(cors({ origin: 'http://localhost:3000' }));
+    ```
+    This is always a **backend fix** — the browser enforces CORS; you can't bypass it from the frontend.
+  </TabItem>
+</Tabs>
+
+---
+
+## General Debugging Strategy
+
+```
+1. Check the Console — any red errors? Start there.
+2. Check the Network tab — is the API call being made? What's the response?
+3. Add console.log — trace the data flow:
+      console.log('users state:', users);
+      console.log('props received:', props);
+4. Use React DevTools — inspect component state and props live.
+5. Isolate the problem — remove code until the bug disappears, then add back.
+6. Check the React docs / error boundaries for the specific error message.
+```
+
+---
+
+## Key Takeaways
+
+- **Console** — first stop for errors; read the full stack trace
+- **Elements** — inspect DOM and CSS in real time
+- **Network** — debug API calls: URL, status, request/response body
+- **Application** — inspect cookies and storage
+- **React DevTools** — inspect live component state/props; profile re-renders
+- CORS errors are always fixed on the **backend**, not the frontend
+- `Cannot read properties of undefined` = data not yet loaded; add null checks
+
+**Next: [Common Pitfalls →](/practical/pitfalls/)**

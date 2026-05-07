@@ -1,0 +1,299 @@
+---
+title: JavaScript in the Browser
+description: Learn how JavaScript runs in the browser — the event loop, DOM manipulation, async operations, and closures.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## JavaScript in the Browser vs. Node.js / Server-Side
+
+You might already know JavaScript from Node.js or Deno. Browser JavaScript is the same language, but in a different environment:
+
+| Aspect | Node.js (server) | Browser |
+|---|---|---|
+| **Global object** | `global` / `globalThis` | `window` / `globalThis` |
+| **DOM access** | None | `document`, `window` |
+| **Modules** | CommonJS (`require`) or ESM | ESM (`import`/`export`) |
+| **I/O** | File system, network, DB | `fetch`, WebSocket, localStorage |
+| **Threading** | Event loop + worker threads | Event loop + Web Workers |
+| **Entry point** | `node app.js` | `<script>` tag in HTML |
+
+---
+
+## The Event Loop
+
+The JavaScript runtime in the browser is **single-threaded** — one call stack, one piece of code running at a time.
+
+<Aside type="tip" title="Backend analogy">
+The event loop is like a **single-threaded message broker**. Events (user clicks, timer callbacks, resolved promises) are messages in a queue. The JavaScript engine picks them one at a time and executes the associated handler. There's no pre-emption — a running function runs to completion before the next message is processed.
+</Aside>
+
+```
+Call Stack        | Microtask Queue    | Macrotask Queue
+------------------|--------------------|------------------
+main()            | Promise.then(...)  | setTimeout(cb, 0)
+  fetchUsers()    | async/await cont.  | setInterval(cb)
+                  |                    | DOM events (click)
+```
+
+**Execution order:**
+1. Current synchronous code runs to completion
+2. All microtasks (Promise `.then`, `async/await`) are drained
+3. One macrotask (setTimeout, DOM event) is processed
+4. Repeat
+
+```js
+console.log('1');
+
+setTimeout(() => console.log('2'), 0);   // macrotask — runs last
+
+Promise.resolve().then(() => console.log('3')); // microtask — runs before macrotask
+
+console.log('4');
+
+// Output: 1, 4, 3, 2
+```
+
+---
+
+## Async/Await and Promises
+
+You likely know async/await from your backend. It works identically in the browser.
+
+```js
+// Promise chain
+fetch('/api/users')
+  .then(res => res.json())
+  .then(users => console.log(users))
+  .catch(err => console.error(err));
+
+// Async/await — same thing, more readable
+async function loadUsers() {
+  try {
+    const res   = await fetch('/api/users');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const users = await res.json();
+    return users;
+  } catch (err) {
+    console.error('Failed to load users:', err);
+    throw err; // re-throw so callers can handle
+  }
+}
+```
+
+<Aside type="caution" title="Common mistake">
+`async` functions always return a Promise. If you forget to `await` them, you get a Promise object instead of the resolved value — a very common bug for developers coming from synchronous backends.
+
+```js
+// BUG — forgot await
+const users = loadUsers(); // users is a Promise, not an array!
+console.log(users.length); // undefined
+
+// CORRECT
+const users = await loadUsers();
+console.log(users.length); // 10
+```
+</Aside>
+
+---
+
+## DOM Manipulation
+
+The DOM is the browser's in-memory tree of objects representing the HTML page. JavaScript can read and modify it.
+
+### Querying Elements
+
+```js
+// Get a single element
+const btn    = document.getElementById('submit-btn');
+const input  = document.querySelector('#email-input');      // CSS selector
+const first  = document.querySelector('.card');             // first match
+
+// Get multiple elements
+const cards  = document.querySelectorAll('.card');          // NodeList
+const inputs = document.getElementsByClassName('input');    // HTMLCollection
+```
+
+### Modifying Elements
+
+```js
+const el = document.getElementById('status');
+
+// Text content (safe — no HTML injection)
+el.textContent = 'Loading...';
+
+// HTML content (careful — XSS risk if using user input)
+el.innerHTML = '<strong>Done!</strong>';
+
+// Attributes
+el.setAttribute('aria-disabled', 'true');
+el.getAttribute('id');       // "status"
+el.removeAttribute('hidden');
+
+// CSS classes
+el.classList.add('active');
+el.classList.remove('hidden');
+el.classList.toggle('open');
+el.classList.contains('active'); // true
+
+// Inline styles
+el.style.color = 'red';
+el.style.display = 'none';
+```
+
+<Aside type="caution" title="Security: never use innerHTML with user data">
+Setting `innerHTML` with user-provided content enables **XSS (Cross-Site Scripting)** attacks. Always use `textContent` for text, or sanitize input before using `innerHTML`.
+
+```js
+// DANGEROUS — if userInput contains <script>alert(1)</script>
+el.innerHTML = userInput;
+
+// SAFE
+el.textContent = userInput;
+```
+</Aside>
+
+### Creating and Inserting Elements
+
+```js
+// Create
+const li = document.createElement('li');
+li.textContent = 'New item';
+li.classList.add('list-item');
+
+// Insert
+const ul = document.getElementById('user-list');
+ul.appendChild(li);                        // at the end
+ul.prepend(li);                            // at the start
+ul.insertBefore(li, ul.firstChild);        // before specific element
+
+// Remove
+ul.removeChild(li);
+li.remove(); // modern shorthand
+```
+
+---
+
+## Event Handling
+
+Events are fired by user interactions, browser actions, and timers.
+
+```js
+const button = document.getElementById('load-btn');
+
+// Add a listener
+button.addEventListener('click', handleClick);
+
+// Remove a listener (must be the same function reference)
+button.removeEventListener('click', handleClick);
+
+function handleClick(event) {
+  event.preventDefault(); // prevent default browser behavior (e.g., form submit)
+  event.stopPropagation(); // stop event from bubbling up to parent elements
+  console.log('Button clicked!', event.target);
+}
+```
+
+### Common Events
+
+| Event | Fired when |
+|---|---|
+| `click` | User clicks an element |
+| `submit` | Form is submitted |
+| `input` | Input value changes (every keystroke) |
+| `change` | Input loses focus after value changed |
+| `keydown` / `keyup` | Key is pressed / released |
+| `mouseover` / `mouseout` | Mouse enters / leaves element |
+| `focus` / `blur` | Element gains / loses focus |
+| `DOMContentLoaded` | HTML parsed, DOM ready |
+| `load` | Page and all resources fully loaded |
+
+### Event Delegation
+
+Instead of adding listeners to every item in a list, add one listener to the parent:
+
+```js
+// INEFFICIENT — listener on every item
+document.querySelectorAll('.delete-btn').forEach(btn => {
+  btn.addEventListener('click', deleteUser);
+});
+
+// EFFICIENT — one listener on the parent, check target
+document.getElementById('user-list').addEventListener('click', (e) => {
+  if (e.target.matches('.delete-btn')) {
+    const userId = e.target.dataset.userId;
+    deleteUser(userId);
+  }
+});
+```
+
+<Aside type="tip" title="Backend analogy">
+Event delegation is like **routing middleware**: one handler at the top checks what kind of request arrived and dispatches accordingly, instead of registering separate handlers for every endpoint variation.
+</Aside>
+
+---
+
+## Closures
+
+Closures are functions that capture variables from their outer scope. They're fundamental to JavaScript.
+
+```js
+function createCounter() {
+  let count = 0; // captured by the returned function
+
+  return {
+    increment: () => ++count,
+    decrement: () => --count,
+    getCount:  () => count,
+  };
+}
+
+const counter = createCounter();
+counter.increment(); // 1
+counter.increment(); // 2
+counter.getCount();  // 2
+// count is private — can't access it directly
+```
+
+<Aside type="tip" title="Backend analogy">
+Closures are like **objects with private state** or **partial function application**. The captured variables are like private fields that only the inner functions can access. React hooks use closures extensively — `useState` returns a getter and setter that close over the state slot.
+</Aside>
+
+---
+
+## Browser Storage
+
+| API | Capacity | Persists | Use case |
+|---|---|---|---|
+| `localStorage` | ~5MB | Until cleared | User preferences |
+| `sessionStorage` | ~5MB | Until tab closes | Temporary session data |
+| Cookies | ~4KB | Configurable | Auth tokens (with HttpOnly flag) |
+| IndexedDB | Large | Until cleared | Offline data, large datasets |
+
+```js
+// localStorage
+localStorage.setItem('theme', 'dark');
+const theme = localStorage.getItem('theme'); // "dark"
+localStorage.removeItem('theme');
+
+// sessionStorage (same API, different scope)
+sessionStorage.setItem('draft', JSON.stringify({ title: 'Hello' }));
+```
+
+<Aside type="caution" title="Security warning">
+Never store sensitive data (auth tokens, passwords, PII) in `localStorage` or `sessionStorage` — they're accessible to any JavaScript on the page (XSS vulnerability). Use **HttpOnly cookies** for auth tokens — the browser sends them automatically and JavaScript cannot read them.
+</Aside>
+
+---
+
+## Key Takeaways
+
+- The browser event loop is **single-threaded** — never block it with sync operations
+- `async/await` works the same as in Node.js; always `await` async calls
+- Use `querySelector` / `querySelectorAll` to find DOM elements
+- Use `textContent` (not `innerHTML`) when inserting user data — prevents XSS
+- Events bubble up the DOM tree — use event delegation for efficiency
+- Closures capture outer scope variables — fundamental to React hooks
+- Store auth tokens in **HttpOnly cookies**, not localStorage
+
+**Next: [React →](/concepts/react/)**

@@ -1,0 +1,226 @@
+---
+title: "Intermediate Level: Build Features"
+description: Learn React, components, state management, and how to build complete features end-to-end.
+sidebar:
+  order: 2
+---
+
+import { Aside, Steps, Badge } from '@astrojs/starlight/components';
+
+<Badge text="Level 2" variant="tip" size="large" /> Prerequisite: comfortable with HTML, CSS, vanilla JS, and `fetch`.
+
+## Goal of This Level
+
+By the end of the intermediate level, you'll be able to:
+- Build React components and compose UIs from them
+- Manage local component state with hooks
+- Consume REST APIs and handle loading/error states
+- Build a complete CRUD feature in React
+
+**Time estimate:** 4–6 weeks (part-time, ~1 hour/day)
+
+---
+
+## Key Concepts to Learn
+
+### React — Component-Based UI
+
+React is a JavaScript library for building UIs out of **components**. A component is a function that returns JSX (HTML-like syntax) describing what should be rendered.
+
+<Aside type="tip" title="Backend analogy">
+A React component is like a **function or module** in your backend: it takes inputs (props), has its own local state, and produces an output (rendered HTML). Just as you compose functions to build a system, you compose components to build a UI.
+</Aside>
+
+```jsx
+// A simple component — a function that returns JSX
+function UserCard({ name, email }) {
+  return (
+    <div className="card">
+      <h2>{name}</h2>
+      <p>{email}</p>
+    </div>
+  );
+}
+
+// Composed into a list
+function UserList({ users }) {
+  return (
+    <ul>
+      {users.map(user => (
+        <UserCard key={user.id} name={user.name} email={user.email} />
+      ))}
+    </ul>
+  );
+}
+```
+
+### Props — Component Inputs
+
+Props are the **parameters** passed into a component. They're read-only — a component never mutates its own props.
+
+```jsx
+// Calling a component is like calling a function with named arguments
+<UserCard name="Alice" email="alice@example.com" />
+```
+
+### State — Component Memory
+
+State is local mutable data owned by a component. When state changes, React re-renders the component.
+
+<Aside type="tip" title="Backend analogy">
+State is like an **in-memory variable** inside a request handler — except it persists across re-renders (not just one request). When you call `setState`, React schedules a re-render (like queuing a re-computation).
+</Aside>
+
+```jsx
+import { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0); // [currentValue, setterFn]
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+### useEffect — Side Effects
+
+`useEffect` runs code **after** a component renders. Use it for:
+- Fetching data on mount
+- Setting up subscriptions
+- Syncing with external systems
+
+```jsx
+import { useState, useEffect } from 'react';
+
+function UserList() {
+  const [users, setUsers]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(null);
+
+  useEffect(() => {
+    fetch('/api/users')
+      .then(res => res.json())
+      .then(data => {
+        setUsers(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []); // empty array = run once on mount
+
+  if (loading) return <p>Loading...</p>;
+  if (error)   return <p>Error: {error}</p>;
+
+  return (
+    <ul>
+      {users.map(u => <li key={u.id}>{u.name}</li>)}
+    </ul>
+  );
+}
+```
+
+<Aside type="tip" title="Backend analogy">
+`useEffect(() => { ... }, [])` is like the **constructor or `@PostConstruct` method** in a class — code that runs once when the component "starts up". The dependency array controls when it re-runs: empty = once, `[userId]` = every time `userId` changes (like a watcher).
+</Aside>
+
+### Form Handling
+
+```jsx
+function LoginForm() {
+  const [email, setEmail]       = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // prevent page reload (default browser behavior)
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    // handle response...
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        required
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        required
+      />
+      <button type="submit">Log in</button>
+    </form>
+  );
+}
+```
+
+---
+
+## Skills to Acquire
+
+| Skill | Description |
+|---|---|
+| Create React components | Functional components with JSX |
+| Pass and use props | Parent → child data flow |
+| Manage state with `useState` | Local mutable data |
+| Fetch data with `useEffect` | On mount, on dependency change |
+| Handle loading & error states | Always show feedback to users |
+| Handle forms | Controlled inputs, `onSubmit`, `preventDefault` |
+| Compose components | Build complex UIs from small pieces |
+| Use `key` prop in lists | Required for React's reconciliation |
+
+---
+
+## Hands-on Practice
+
+### Mini Project: React User Dashboard
+
+Build a React app (using [Vite](https://vite.dev/guide/)) that:
+1. Fetches and displays a list of users from `jsonplaceholder.typicode.com`
+2. Has a form to create a new user (POST request)
+3. Can delete a user from the list (DELETE request)
+4. Shows proper loading and error states
+
+<Steps>
+1. Scaffold: `npm create vite@latest my-app -- --template react`
+2. Build a `UserList` component with fetch + loading/error states
+3. Build a `UserForm` component for creating users
+4. Wire them together in `App.jsx` with shared state
+5. Add delete functionality per user row
+6. Style with basic CSS or a utility library like Tailwind
+</Steps>
+
+### Additional Practice
+
+- Add **pagination** to the user list (page param in API call)
+- Add a **search filter** (filter list by name client-side)
+- Add **form validation** with error messages per field
+
+---
+
+## Expected Outcomes
+
+After completing this level you should be able to:
+
+✅ Create and compose React functional components  
+✅ Pass data down via props, manage local state via `useState`  
+✅ Fetch API data with `useEffect` and handle all three states (loading, error, success)  
+✅ Build and submit a form with controlled inputs  
+✅ Build a complete CRUD feature independently  
+✅ Read unfamiliar React code and trace the data flow  
+
+---
+
+**Next: [Advanced Level →](/roadmap/advanced/)**

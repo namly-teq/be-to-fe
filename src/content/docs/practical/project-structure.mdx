@@ -1,0 +1,249 @@
+---
+title: Frontend Project Structure
+description: How to organize a React frontend project — folder conventions, where logic lives, and why it's structured differently from backend.
+---
+
+import { Aside, FileTree } from '@astrojs/starlight/components';
+
+## Why Frontend Structure Feels Different
+
+In backend development, structure often follows **technical layers**: controllers, services, repositories. Frontend structure increasingly follows **feature/domain boundaries** — co-locating everything a feature needs in one place.
+
+<Aside type="tip" title="Backend analogy">
+Think of modern frontend structure as **modular monolith organization**: each feature module contains its own API handlers, business logic, and data models — instead of separating all controllers into one folder, all services into another. It's the same logic that motivates domain-driven design.
+</Aside>
+
+---
+
+## Scaffolding a React + Vite Project
+
+```bash
+npm create vite@latest my-app -- --template react
+cd my-app
+npm install
+npm run dev
+```
+
+Default generated structure:
+
+<FileTree>
+- my-app/
+  - public/              Static assets served as-is (favicon, robots.txt)
+  - src/
+    - assets/            Images, fonts, icons
+    - App.jsx            Root component
+    - App.css
+    - main.jsx           Entry point — mounts &lt;App /&gt; to the DOM
+    - index.css          Global styles
+  - index.html           HTML template
+  - vite.config.js       Build tool config
+  - package.json
+</FileTree>
+
+---
+
+## Recommended Structure for a Real App
+
+As the project grows, organize by **feature** with shared utilities extracted:
+
+<FileTree>
+- src/
+  - components/          Shared, reusable UI components
+    - Button/
+      - Button.jsx
+      - Button.module.css
+      - Button.test.jsx
+    - Modal/
+    - Spinner/
+  - features/            Feature-scoped modules
+    - users/
+      - UserList.jsx
+      - UserDetail.jsx
+      - UserForm.jsx
+      - useUsers.js      Feature-specific hooks
+      - usersApi.js      API calls for this feature
+      - usersStore.js    Zustand store slice (if needed)
+    - auth/
+      - LoginPage.jsx
+      - useAuth.js
+      - authApi.js
+    - dashboard/
+  - hooks/               Shared custom hooks
+    - useFetch.js
+    - useDebounce.js
+    - useLocalStorage.js
+  - lib/                 Shared utilities
+    - api.js             Axios instance / base fetch wrapper
+    - formatters.js      Date, number, string utilities
+    - validators.js
+  - pages/               Top-level route components (thin wrappers)
+    - UsersPage.jsx
+    - DashboardPage.jsx
+    - NotFoundPage.jsx
+  - store/               Global state (Zustand/Redux)
+    - authStore.js
+    - uiStore.js
+  - App.jsx              Router setup
+  - main.jsx             Entry point
+</FileTree>
+
+---
+
+## Key Folders Explained
+
+### `components/` — Shared UI Primitives
+
+These are **pure UI components** with no business logic. They receive data via props and emit events via callbacks.
+
+```jsx
+// components/Button/Button.jsx
+function Button({ children, onClick, variant = 'primary', disabled = false }) {
+  return (
+    <button
+      className={`btn btn-${variant}`}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {children}
+    </button>
+  );
+}
+```
+
+**Rule**: Shared components should have **no knowledge** of your API, business domain, or global state.
+
+### `features/` — Domain-Specific Modules
+
+Each feature folder contains everything needed for that domain:
+
+```
+features/users/
+├── UserList.jsx       ← Presentational list component
+├── UserDetail.jsx     ← Detail view
+├── UserForm.jsx       ← Create/edit form
+├── useUsers.js        ← Custom hook: data fetching + state
+└── usersApi.js        ← Raw API call functions
+```
+
+```js
+// features/users/usersApi.js
+import { api } from '../../lib/api';
+
+export const getUsers  = ()        => api.get('/users').then(r => r.data);
+export const getUser   = (id)      => api.get(`/users/${id}`).then(r => r.data);
+export const createUser = (data)   => api.post('/users', data).then(r => r.data);
+export const updateUser = (id, d)  => api.put(`/users/${id}`, d).then(r => r.data);
+export const deleteUser = (id)     => api.delete(`/users/${id}`);
+```
+
+```js
+// features/users/useUsers.js
+import { useState, useEffect } from 'react';
+import { getUsers, deleteUser } from './usersApi';
+
+export function useUsers() {
+  const [users, setUsers]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(null);
+
+  useEffect(() => {
+    getUsers()
+      .then(setUsers)
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const remove = async (id) => {
+    await deleteUser(id);
+    setUsers(prev => prev.filter(u => u.id !== id));
+  };
+
+  return { users, loading, error, remove };
+}
+```
+
+### `lib/api.js` — Centralized HTTP Client
+
+```js
+// lib/api.js
+import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
+
+export const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  timeout: 10_000,
+});
+
+api.interceptors.request.use(config => {
+  const token = useAuthStore.getState().token;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+```
+
+### `pages/` — Route-Level Components
+
+Pages are **thin orchestrators** — they compose feature components and pass route params:
+
+```jsx
+// pages/UsersPage.jsx
+import { UserList } from '../features/users/UserList';
+
+export default function UsersPage() {
+  return (
+    <main>
+      <h1>Users</h1>
+      <UserList />
+    </main>
+  );
+}
+```
+
+---
+
+## Environment Variables
+
+Vite uses `.env` files for environment-specific configuration:
+
+```bash
+# .env.development
+VITE_API_BASE_URL=http://localhost:8080/api
+
+# .env.production
+VITE_API_BASE_URL=https://api.yourapp.com
+```
+
+```js
+// Access in code — must be prefixed with VITE_
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+```
+
+<Aside type="caution" title="Security: don't put secrets in .env">
+Environment variables in Vite are **bundled into the client-side JavaScript** — anyone can read them by inspecting the source. Never put API keys, secrets, or passwords in frontend environment variables. Only put values that are safe to be public (like an API base URL).
+</Aside>
+
+---
+
+## Naming Conventions
+
+| Thing | Convention | Example |
+|---|---|---|
+| Component files | PascalCase | `UserCard.jsx` |
+| Non-component files | camelCase | `usersApi.js`, `formatDate.js` |
+| Custom hooks | camelCase, starts with `use` | `useUsers.js` |
+| CSS modules | `ComponentName.module.css` | `UserCard.module.css` |
+| Constants | SCREAMING_SNAKE_CASE | `MAX_PAGE_SIZE` |
+| Event handlers | `handle` prefix | `handleSubmit`, `handleDelete` |
+
+---
+
+## Key Takeaways
+
+- Organize by **feature/domain**, not by technical layer
+- `components/` = shared pure UI; `features/` = business domain modules
+- Each feature owns its own API calls, hooks, and components
+- Centralize the HTTP client in `lib/api.js` with auth interceptors
+- Pages are thin — they compose, not implement
+- Never put secrets in frontend environment variables
+
+**Next: [Reading Frontend Code →](/practical/reading-code/)**

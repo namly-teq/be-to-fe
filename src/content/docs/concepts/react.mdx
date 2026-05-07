@@ -1,0 +1,306 @@
+---
+title: React — Components, State & Hooks
+description: The essentials of React — how components work, how state drives rendering, and the most important hooks.
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Why React?
+
+Vanilla JavaScript DOM manipulation gets unwieldy fast. When you have hundreds of elements that depend on shared state, manually keeping the DOM in sync with your data becomes a maintenance nightmare.
+
+React solves this with a simple idea: **describe what the UI should look like given the current state**, and let React figure out the DOM updates.
+
+<Aside type="tip" title="Backend analogy">
+React is like a **template engine with reactive re-rendering**. Instead of manually calling `res.render()` after every data change, you declare your template once and React automatically re-renders it whenever the data (state/props) changes. It's declarative, not imperative.
+</Aside>
+
+---
+
+## Components
+
+A React component is a **JavaScript function** that returns JSX (HTML-like syntax describing the UI).
+
+```jsx
+// A functional component
+function Greeting({ name }) {
+  return <h1>Hello, {name}!</h1>;
+}
+
+// Use it like an HTML tag
+<Greeting name="Alice" />
+// Renders: <h1>Hello, Alice!</h1>
+```
+
+### Rules of Components
+
+1. **Component names must start with a capital letter** — React uses this to distinguish components from HTML tags
+2. **Must return a single root element** — wrap multiple elements in a fragment `<>...</>`
+3. **Props are read-only** — never mutate props
+4. **No side effects during render** — use hooks for side effects
+
+```jsx
+// Multiple root elements — use a fragment
+function UserInfo({ user }) {
+  return (
+    <>
+      <h2>{user.name}</h2>
+      <p>{user.email}</p>
+    </>
+  );
+}
+```
+
+---
+
+## JSX
+
+JSX compiles to `React.createElement()` calls. Key differences from HTML:
+
+```jsx
+// className instead of class
+<div className="card">
+
+// camelCase event handlers
+<button onClick={handleClick}>
+
+// JavaScript expressions in {}
+<p>Total: {items.length} items</p>
+
+// Conditional rendering
+{isLoggedIn && <UserMenu />}
+{isLoggedIn ? <UserMenu /> : <LoginButton />}
+
+// Lists — always need a key
+{users.map(user => (
+  <UserCard key={user.id} user={user} />
+))}
+
+// Self-closing tags
+<input type="text" />
+<img src={avatar} alt="User avatar" />
+```
+
+---
+
+## Props — Component Inputs
+
+Props are **immutable inputs** passed from a parent component to a child.
+
+```jsx
+// Parent passes props
+function App() {
+  const user = { id: 1, name: 'Alice', role: 'admin' };
+  return <UserCard user={user} onDelete={handleDelete} showActions={true} />;
+}
+
+// Child receives and uses props
+function UserCard({ user, onDelete, showActions }) {
+  return (
+    <div className="card">
+      <h2>{user.name}</h2>
+      <span className={`badge badge-${user.role}`}>{user.role}</span>
+      {showActions && (
+        <button onClick={() => onDelete(user.id)}>Delete</button>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+## State — Component Memory
+
+State is **mutable local data** that, when changed, triggers a re-render.
+
+```jsx
+import { useState } from 'react';
+
+function Counter() {
+  // useState returns [currentValue, setterFunction]
+  const [count, setCount] = useState(0); // 0 is the initial value
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>+</button>
+      <button onClick={() => setCount(count - 1)}>-</button>
+      <button onClick={() => setCount(0)}>Reset</button>
+    </div>
+  );
+}
+```
+
+### State Update Rules
+
+```jsx
+// ✅ Set a new value
+setCount(count + 1);
+
+// ✅ Functional update — use when new state depends on old state
+setCount(prev => prev + 1);
+
+// ✅ Updating an object — always spread to create a new object
+setUser(prev => ({ ...prev, name: 'Bob' }));
+
+// ✅ Updating an array — always return a new array
+setItems(prev => [...prev, newItem]);
+setItems(prev => prev.filter(item => item.id !== deletedId));
+
+// ❌ NEVER mutate state directly — React won't detect the change
+count++;              // wrong
+user.name = 'Bob';   // wrong
+items.push(newItem); // wrong
+```
+
+<Aside type="caution" title="Critical rule">
+Always treat state as **immutable**. Never mutate it directly — always create a new value with the setter function. Direct mutation won't trigger a re-render.
+</Aside>
+
+---
+
+## Key Hooks
+
+### `useState` — Local State
+
+```jsx
+const [value, setValue] = useState(initialValue);
+```
+
+### `useEffect` — Side Effects
+
+Run code after render, optionally when certain values change.
+
+```jsx
+import { useEffect } from 'react';
+
+// Run once on mount (empty dependency array)
+useEffect(() => {
+  document.title = 'My App';
+}, []);
+
+// Run when userId changes
+useEffect(() => {
+  fetch(`/api/users/${userId}`)
+    .then(r => r.json())
+    .then(setUser);
+}, [userId]);
+
+// Run on every render (no dependency array — usually a bug)
+useEffect(() => {
+  console.log('rendered');
+});
+
+// Cleanup — runs before next effect and on unmount
+useEffect(() => {
+  const timer = setInterval(tick, 1000);
+  return () => clearInterval(timer); // cleanup
+}, []);
+```
+
+### `useContext` — Read from Context
+
+```jsx
+const theme = useContext(ThemeContext);
+```
+
+### `useRef` — Mutable Ref Without Re-render
+
+```jsx
+import { useRef } from 'react';
+
+function TextInput() {
+  const inputRef = useRef(null);
+
+  const focusInput = () => inputRef.current.focus();
+
+  return (
+    <>
+      <input ref={inputRef} type="text" />
+      <button onClick={focusInput}>Focus</button>
+    </>
+  );
+}
+```
+
+<Aside type="tip" title="When to use useRef">
+`useRef` is like a **mutable instance variable** that doesn't trigger re-renders. Use it for:
+- DOM element references (`ref={inputRef}`)
+- Storing a previous value
+- Holding a timer ID or subscription reference
+</Aside>
+
+### `useMemo` and `useCallback` — Performance
+
+```jsx
+// Memoize an expensive computed value
+const sortedUsers = useMemo(() => {
+  return [...users].sort((a, b) => a.name.localeCompare(b.name));
+}, [users]); // recompute only when users changes
+
+// Memoize a function reference (stable across renders)
+const handleDelete = useCallback((id) => {
+  setUsers(prev => prev.filter(u => u.id !== id));
+}, []); // no dependencies — stable forever
+```
+
+---
+
+## Component Lifecycle
+
+React functional components have three lifecycle phases:
+
+| Phase | When | Hook |
+|---|---|---|
+| **Mount** | Component added to the DOM | `useEffect(() => { ... }, [])` |
+| **Update** | State or props change → re-render | `useEffect(() => { ... }, [dep])` |
+| **Unmount** | Component removed from the DOM | Return a cleanup function from `useEffect` |
+
+---
+
+## Data Flow
+
+React data flows **one way**: parent → child via props. For child-to-parent communication, pass a callback function as a prop.
+
+```jsx
+function Parent() {
+  const [selected, setSelected] = useState(null);
+
+  return (
+    <div>
+      <ChildList onSelect={setSelected} />
+      {selected && <DetailPanel item={selected} />}
+    </div>
+  );
+}
+
+function ChildList({ onSelect }) {
+  return (
+    <ul>
+      {items.map(item => (
+        <li key={item.id} onClick={() => onSelect(item)}>
+          {item.name}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+<Aside type="tip" title="Backend analogy">
+Unidirectional data flow is like the **request/response model**: data flows in one direction (down via props), and responses (events/callbacks) flow back up. There's no two-way binding — changes are explicit and traceable.
+</Aside>
+
+---
+
+## Key Takeaways
+
+- Components are functions that take props and return JSX
+- State is local, mutable, and triggers re-renders when changed
+- **Never mutate state directly** — always use the setter
+- `useEffect` for side effects (fetching, subscriptions, timers)
+- Data flows down (props), events flow up (callbacks)
+- The key prop in lists is required — it must be a stable, unique identifier (use IDs, not array indices)
+
+**Next: [API Integration →](/concepts/api-integration/)**

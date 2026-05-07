@@ -1,0 +1,168 @@
+---
+title: Frontend Fundamentals
+description: What is frontend, how do browsers work, and how does frontend talk to your backend APIs?
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+## Frontend vs Backend — What's the Difference?
+
+As a backend developer, you're used to working in an environment you control: servers, databases, file systems. Frontend is different — your code runs **inside the user's browser**, an environment you don't control.
+
+| Aspect | Backend | Frontend |
+|---|---|---|
+| **Runs on** | Your server | User's browser |
+| **Language** | Any (Go, Java, Python, JS…) | JavaScript (always) |
+| **Input** | HTTP requests | User interactions (clicks, typing, scrolling) |
+| **Output** | HTTP responses (JSON, HTML) | Visual UI rendered on screen |
+| **State** | Managed in DB / session | Managed in memory / component state |
+| **Failure mode** | 500 error, crash log | Blank screen, broken UI, silent error |
+
+**Frontend is responsible for:**
+- Rendering HTML/CSS as a visual interface in the browser
+- Handling user interactions (clicks, form submissions, navigation)
+- Fetching data from your backend APIs and displaying it
+- Managing UI state (loading, error, success states)
+
+**Backend is responsible for:**
+- Business logic and data processing
+- Authentication and authorization
+- Persistence (databases, file storage)
+- Exposing APIs that frontend consumes
+
+<Aside type="tip" title="Analogy">
+Think of backend as a **restaurant kitchen** and frontend as the **dining room + menu**. The kitchen processes orders and produces food (data). The dining room presents it beautifully and handles the customer interaction. Neither is more important — both need to work together.
+</Aside>
+
+---
+
+## How Browsers Work
+
+Understanding what happens when a user visits a URL is essential context for all frontend work.
+
+### The Request-Response Cycle (you already know this)
+
+```
+User types URL → DNS lookup → TCP connection → HTTP request → Server responds → Browser renders
+```
+
+That last step — **"browser renders"** — is the entire frontend world.
+
+### What the Browser Does with an HTML Response
+
+<Steps>
+1. **Parse HTML** → builds the **DOM** (Document Object Model)
+2. **Parse CSS** → builds the **CSSOM** (CSS Object Model)
+3. **Combine DOM + CSSOM** → builds the **Render Tree**
+4. **Layout** → calculates size and position of every element
+5. **Paint** → draws pixels on screen
+6. **Composite** → layers are assembled (for animations, z-index, etc.)
+</Steps>
+
+### The DOM — Your New Best Friend
+
+The **DOM** is the browser's in-memory representation of the HTML page. It's a tree of objects — one node per HTML element.
+
+<Aside type="tip" title="Backend Analogy">
+The DOM is like a **parsed JSON object** in memory. `document` is the root. You can traverse it, query nodes, and mutate it — just like navigating a nested data structure. When you change the DOM, the browser re-renders the affected parts.
+</Aside>
+
+```js
+// DOM manipulation — like updating a field in a data object
+document.getElementById('username').textContent = 'Alice';
+
+// Query the DOM — like querying a data structure
+const buttons = document.querySelectorAll('button.primary');
+```
+
+### JavaScript in the Browser — The Event Loop
+
+<Aside type="tip" title="Backend Analogy">
+The browser's event loop is like a **single-threaded message queue**. JavaScript runs one task at a time. User events (clicks, keyboard input) are queued as messages. Async operations (setTimeout, fetch) schedule callbacks that get queued when they complete.
+</Aside>
+
+Key difference from backend: **JavaScript in the browser is single-threaded**. There's no true parallelism. This is why long-running sync operations freeze the UI — you're blocking the one thread that paints the screen.
+
+```js
+// BAD — blocks the UI thread for 2 seconds
+const start = Date.now();
+while (Date.now() - start < 2000) {} // user can't click anything
+
+// GOOD — non-blocking, yields to the event loop
+await new Promise(resolve => setTimeout(resolve, 2000));
+```
+
+---
+
+## How Frontend Talks to Your Backend
+
+This is the part you know best — from the other side.
+
+### HTTP Requests from the Browser
+
+Browsers can make HTTP requests using the `fetch` API (modern) or `XMLHttpRequest` (legacy).
+
+```js
+// GET request — like calling an HTTP client in your backend code
+const response = await fetch('/api/users/42');
+const user = await response.json();
+
+// POST request with JSON body
+const response = await fetch('/api/users', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'Alice', email: 'alice@example.com' }),
+});
+```
+
+<Aside type="tip" title="Backend Analogy">
+`fetch` is the browser's equivalent of **HttpClient / axios / requests / curl**. It returns a Promise (like a Future/async result). The `response.json()` call parses the body — just like how you'd deserialize a response body on the server.
+</Aside>
+
+### CORS — Why Your Backend Needs to Care
+
+**CORS (Cross-Origin Resource Sharing)** is a browser security mechanism that blocks frontend JavaScript from making requests to a different domain/port unless the server explicitly allows it.
+
+<Aside type="caution" title="Common frustration for backend devs">
+If you've ever seen `Access-Control-Allow-Origin` errors in a browser console, that's CORS. The frontend can't bypass it — the **backend must add CORS headers** to allow cross-origin requests. When building both sides, configure CORS on your API server.
+</Aside>
+
+```
+Frontend: http://localhost:3000
+Backend:  http://localhost:8080
+
+→ Different ports = different origin → browser blocks by default
+→ Backend must respond with: Access-Control-Allow-Origin: http://localhost:3000
+```
+
+### JSON Is the Common Language
+
+Frontend and backend communicate almost exclusively via **JSON**. Your backend serializes objects to JSON; the frontend deserializes them. You already know this — it's the same data you've been returning from your APIs.
+
+---
+
+## The Role of HTML, CSS, and JavaScript
+
+Think of these three as the three layers of a web page:
+
+| Layer | Technology | Backend equivalent |
+|---|---|---|
+| **Structure** | HTML | Data schema / response body |
+| **Presentation** | CSS | Report formatting / templating |
+| **Behavior** | JavaScript | Business logic / event handlers |
+
+Every frontend UI — no matter how complex — is built from these three building blocks. React, Vue, Angular are all **tools that generate and manage HTML/CSS/JS** — they don't replace them.
+
+---
+
+## Summary
+
+- Frontend code runs in the **user's browser**, not your server
+- The browser parses HTML into a **DOM tree** and renders it visually
+- JavaScript is **single-threaded** — avoid blocking operations
+- Frontend talks to your backend via **`fetch` / HTTP** — you already understand this
+- **CORS** is enforced by the browser — your backend must configure it
+- HTML = structure, CSS = style, JavaScript = behavior
+- Frameworks like React are abstractions **on top of** these three primitives
+
+**Next: [Beginner Roadmap →](/roadmap/beginner/)**
