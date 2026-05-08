@@ -194,7 +194,7 @@ Build a React app (using [Vite](https://vite.dev/guide/)) that:
 4. Shows proper loading and error states
 
 <Steps>
-1. Scaffold: `npm create vite@latest my-app -- --template react`
+1. Scaffold with teq-superplate following the [TEQ Tools guide](/concepts/teq-tools/) — this sets up ESLint, Prettier, Husky and commitlint automatically
 2. Build a `UserList` component with fetch + loading/error states
 3. Build a `UserForm` component for creating users
 4. Wire them together in `App.jsx` with shared state
@@ -207,6 +207,13 @@ Build a React app (using [Vite](https://vite.dev/guide/)) that:
 - Add **pagination** to the user list (page param in API call)
 - Add a **search filter** (filter list by name client-side)
 - Add **form validation** with error messages per field
+- Upgrade: rebuild this as a **Next.js project** with App Router (preparation for Project 2 in the TEQ practice program)
+
+### Ready for real TEQ projects?
+
+Once you've completed this dashboard, follow the full 4-project TEQ practice program:
+
+👉 [Practice: Become a Real TEQ FE Developer →](/practice/)
 
 ---
 
@@ -220,6 +227,31 @@ After completing this level you should be able to:
 ✅ Build and submit a form with controlled inputs  
 ✅ Build a complete CRUD feature independently  
 ✅ Read unfamiliar React code and trace the data flow  
+
+---
+
+## TEQ Course: TEQ Tools
+
+Once you can build a working React feature, the next step is learning to work within **TEQ engineering standards**. The TEQ Front-end team maintains an official course that covers the full toolchain used on every real project.
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="ESLint + Prettier" icon="approve-check-circle">
+    Automatic code quality and formatting — enforced on every save and commit.
+  </Card>
+  <Card title="Husky + lint-staged" icon="setting">
+    Git hooks that run linters before every commit, keeping the repo always clean.
+  </Card>
+  <Card title="commitlint" icon="list-format">
+    Structured commit messages for readable, searchable project history.
+  </Card>
+  <Card title="teq-superplate" icon="rocket">
+    One CLI command to scaffold a fully configured TEQ project — no manual setup.
+  </Card>
+</CardGrid>
+
+👉 See the full course details: [TEQ Tools →](/concepts/teq-tools/)
 
 ---
 

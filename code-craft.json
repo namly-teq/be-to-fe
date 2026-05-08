@@ -1,0 +1,129 @@
+{
+  "id": 43,
+  "category": {
+    "id": 0,
+    "name": "Master"
+  },
+  "team": {
+    "id": 2,
+    "name": "Front-end"
+  },
+  "require_level": {
+    "id": 6,
+    "name": "All level"
+  },
+  "type": {
+    "id": 4,
+    "name": "Instructor"
+  },
+  "cover": "https://eazy-learn-prod-aqdyzh.s3.ap-southeast-1.amazonaws.com/courses/891b892b-0162-46f9-89e4-2fb3539bd8d8.png",
+  "title": "Code & Craft: Intro to Front-End Development",
+  "intro": "Unlock the essentials of front-end development with this beginner-friendly course. Learn the core languages—HTML, CSS, and JavaScript—while crafting responsive, interactive websites. Perfect for freshers looking to build a solid foundation in web development and kickstart their coding journey.",
+  "is_required": false,
+  "duration": 5184000,
+  "num_of_module": 2,
+  "num_of_lesson": 5,
+  "num_of_test": 1,
+  "creator": {
+    "id": "112369921022219089814",
+    "team": {
+      "id": 2,
+      "name": "Front-end"
+    }
+  },
+  "list_module": [
+    {
+      "id": 98,
+      "name": "How to Become a Front End Developer",
+      "description": "This template outlines an 8-week training program designed to equip participants with fundamental React development skills using Vite, NextJs, and Vue as a build tool. The program assumes prior knowledge of HTML, CSS, and JavaScript.",
+      "sort_order": 2048,
+      "list_object": [
+        {
+          "id": 147,
+          "type": {
+            "id": 1,
+            "name": "Markdown"
+          },
+          "name": "Template",
+          "intro": null,
+          "sort_order": 1024,
+          "object_status": 3
+        }
+      ]
+    },
+    {
+      "id": 95,
+      "name": "Modern Front-End Mastery: React, Vue, Next.js & Beyond",
+      "description": "This all-encompassing module equips you with the skills to master today’s most in-demand front-end frameworks and tools. Start by learning React with Vite for fast development, delve into Next.js for building high-performance web apps, and create a secure CMS with Next.js and NextAuth. Round off your journey by exploring Vue.js, another versatile framework for crafting dynamic user interfaces. By the end, you'll have a robust toolkit to develop modern, scalable, and interactive web applications, ideal for freshers eager to excel in front-end development.",
+      "sort_order": 3072,
+      "list_object": [
+        {
+          "id": 143,
+          "type": {
+            "id": 1,
+            "name": "Markdown"
+          },
+          "name": "React Ready: Fast Front-End Development with Vite",
+          "intro": "In this lesson, you'll dive into modern front-end development by learning React, a powerful JavaScript library for building user interfaces, and Vite, a lightning-fast development environment. You'll discover how Vite simplifies the setup and speeds up development, making it easier to create and manage React applications. Perfect for freshers eager to jump into real-world web development with cutting-edge tools!",
+          "sort_order": 1024,
+          "object_status": 3
+        },
+        {
+          "id": 144,
+          "type": {
+            "id": 1,
+            "name": "Markdown"
+          },
+          "name": "Build a Custom CMS: Next.js & NextAuth in Action",
+          "intro": "In this hands-on lesson, you'll learn how to build a fully functional content management system (CMS) using Next.js and secure it with NextAuth for authentication. Explore how to manage dynamic content and authentication flows while integrating these tools seamlessly. Perfect for freshers looking to create powerful, secure, and scalable CMS platforms from scratch!",
+          "sort_order": 2048,
+          "object_status": 3
+        },
+        {
+          "id": 145,
+          "type": {
+            "id": 1,
+            "name": "Markdown"
+          },
+          "name": "Next-Level Web Apps: Mastering SSR & SEO with Next.js",
+          "intro": "Take your front-end skills to the next level with this module on Next.js, the powerful React framework for building scalable, high-performance web applications. Learn how to create server-side rendered pages, improve SEO, and optimize performance with Next.js' built-in features. Perfect for freshers looking to build dynamic, production-ready web apps with ease!",
+          "sort_order": 3072,
+          "object_status": 3
+        },
+        {
+          "id": 146,
+          "type": {
+            "id": 1,
+            "name": "Markdown"
+          },
+          "name": "Vue Mastery: Building A Weather App with Vue.js",
+          "intro": "Explore the power of Vue.js in this module designed to introduce freshers to one of the most flexible and beginner-friendly JavaScript frameworks. You'll learn how to create interactive, reactive user interfaces with Vue's intuitive syntax and structure. By the end of this module, you'll be able to build dynamic, data-driven web applications that are lightweight, scalable, and highly performant. Perfect for those looking to expand their front-end toolkit with Vue.js!",
+          "sort_order": 4096,
+          "object_status": 3
+        },
+        {
+          "id": 35,
+          "type": {
+            "id": 3,
+            "name": "Exam"
+          },
+          "name": "Time to test your knowledge!",
+          "intro": "",
+          "sort_order": 5120,
+          "object_status": 0
+        }
+      ]
+    }
+  ],
+  "is_user_enroll": true,
+  "updated_at": "2025-11-04T11:29:28.825999+07:00",
+  "passed_object": 5,
+  "finished_object": 5,
+  "total_object": 6,
+  "review_info": {
+    "total_review": 8,
+    "avg_review": 5,
+    "user_review": 5
+  },
+  "total_gave": 8
+}

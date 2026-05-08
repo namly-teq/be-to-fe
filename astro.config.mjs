@@ -33,6 +33,8 @@ export default defineConfig({
             { label: 'JavaScript in the Browser', link: '/concepts/javascript/' },
             { label: 'React', link: '/concepts/react/' },
             { label: 'API Integration', link: '/concepts/api-integration/' },
+            { label: 'Code & Craft (TEQ Course)', link: '/concepts/code-craft/' },
+            { label: 'TEQ Tools', link: '/concepts/teq-tools/' },
           ],
         },
         {
@@ -52,6 +54,10 @@ export default defineConfig({
         {
           label: '7. Fast-track Learning Plan',
           link: '/fast-track/',
+        },
+        {
+          label: '🎯 Practice: Real TEQ FE Dev',
+          link: '/practice/',
         },
       ],
     }),

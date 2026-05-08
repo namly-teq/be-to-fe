@@ -1,0 +1,242 @@
+---
+title: "Practice: Become a Real TEQ FE Developer"
+description: A structured practice program — 4 real projects used by the TEQ Front-end team — to take you from React beginner to production-ready TEQ developer.
+---
+
+import { Aside, Badge, Card, CardGrid, Steps } from '@astrojs/starlight/components';
+
+<div style="display:flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem;">
+  <Badge text="Code & Craft Course" variant="note" />
+  <Badge text="All levels" variant="tip" />
+  <Badge text="⭐ 5.0 / 5 (8 reviews)" variant="success" />
+</div>
+
+This page outlines the **4 real practice projects** from the TEQ Front-end team's official [Code & Craft course](https://eazylearn.teqn.asia/courses/43). Completing these projects is the fastest way to go from "I understand React" to "I can open a TEQ project repository and contribute on day one."
+
+<Aside type="tip" title="How to use this page">
+Follow the projects in order. Each one builds on the previous. By Project 4, you will have worked with every framework and pattern used across TEQ's real product codebases.
+</Aside>
+
+---
+
+## The 4 TEQ Practice Projects
+
+<CardGrid>
+  <Card title="Project 1 — React + Vite App" icon="rocket">
+    Build your first production-style React app using Vite with the TEQ quality toolchain.
+  </Card>
+  <Card title="Project 2 — Next.js CMS with Auth" icon="setting">
+    Build a full content management system with Next.js, secured with NextAuth.
+  </Card>
+  <Card title="Project 3 — Next.js SSR + SEO" icon="open-book">
+    Take Next.js further: server-side rendering, SEO optimization, and performance.
+  </Card>
+  <Card title="Project 4 — Vue Weather App" icon="puzzle">
+    Build a real-time, data-driven app using Vue.js — TEQ's second primary framework.
+  </Card>
+</CardGrid>
+
+---
+
+## Project 1 — React Ready: Fast Front-End Development with Vite
+
+> *"Learn how Vite simplifies setup and speeds up development, making it easier to create and manage React applications."*
+
+### What You'll Build
+
+A React application scaffolded with `teq-superplate` — fully configured with ESLint, Prettier, Husky, and TailwindCSS from the start, the way every TEQ project begins.
+
+### Skills Practiced
+
+| Skill | Description |
+|---|---|
+| `teq-superplate` scaffold | Initialize a project the TEQ way with all tooling pre-configured |
+| React components | Build and compose functional components with props and state |
+| Vite dev environment | Hot module replacement, fast builds, env variables |
+| TailwindCSS | Style components using utility classes |
+| ESLint + Prettier | Write code that passes the TEQ quality pipeline |
+| Husky + commitlint | Make structured commits that follow TEQ conventions |
+
+### Steps
+
+<Steps>
+1. Install teq-superplate and scaffold a new project — follow the [TEQ Tools guide](/concepts/teq-tools/)
+2. Build a multi-component React UI: at minimum a list view, a detail view, and a form
+3. Fetch real data from a public API (e.g. `https://jsonplaceholder.typicode.com`) using `fetch` or `ky`
+4. Handle all UI states: loading, error, empty, success
+5. Style with TailwindCSS — no custom CSS files
+6. Run `npm run lint` — fix all ESLint warnings before committing
+7. Commit using the conventional format: `feat: add user list page`
+</Steps>
+
+### Expected Outcome
+
+✅ A clean, linted React + Vite project structured the TEQ way  
+✅ At least 3 React components with props and state  
+✅ Real API data displayed with proper loading/error handling  
+✅ All commits following the commitlint convention  
+
+---
+
+## Project 2 — Build a Custom CMS: Next.js & NextAuth in Action
+
+> *"Build a fully functional content management system using Next.js and secure it with NextAuth for authentication."*
+
+### What You'll Build
+
+A CMS (Content Management System) with a protected admin area — users must log in to create, edit, or delete content. Public visitors see read-only pages.
+
+### Skills Practiced
+
+| Skill | Description |
+|---|---|
+| Next.js App Router | File-based routing, layouts, server components |
+| NextAuth | Authentication with session management |
+| Protected routes | Redirect unauthenticated users to login |
+| Dynamic routes | `/posts/[id]` pages with SSG or SSR |
+| API routes | Next.js route handlers for CRUD operations |
+| Server vs client components | Know when to use `"use client"` |
+
+### Steps
+
+<Steps>
+1. Initialize a Next.js project — use the TEQ Next.js guide from [TEQ Tools](/concepts/teq-tools/)
+2. Set up NextAuth with at least one provider (GitHub OAuth or credentials)
+3. Build a protected `/admin` layout that redirects to `/login` when unauthenticated
+4. Create public pages: list of posts (`/posts`), post detail (`/posts/[id]`)
+5. Create admin pages: create post, edit post, delete post
+6. Implement API route handlers for all CRUD operations
+7. Verify the full auth flow end-to-end locally
+</Steps>
+
+### Expected Outcome
+
+✅ A working CMS with authentication  
+✅ Public and protected route separation  
+✅ CRUD operations via Next.js API routes  
+✅ Understanding of server vs client components  
+
+---
+
+## Project 3 — Next-Level Web Apps: Mastering SSR & SEO with Next.js
+
+> *"Learn how to create server-side rendered pages, improve SEO, and optimize performance with Next.js' built-in features."*
+
+### What You'll Build
+
+Extend your Project 2 CMS (or build a new content site) with proper SSR/SSG, SEO metadata, and performance optimizations.
+
+### Skills Practiced
+
+| Skill | Description |
+|---|---|
+| SSR vs SSG | When to use `generateStaticParams` vs dynamic rendering |
+| `<Metadata>` API | Open Graph, title, description for each page |
+| Image optimization | Next.js `<Image>` component for automatic optimization |
+| Incremental Static Regeneration | Revalidate cached pages on a schedule |
+| Loading UI | `loading.tsx` and `Suspense` for streaming |
+| Core Web Vitals | LCP, FID, CLS — what they are and how Next.js helps |
+
+### Steps
+
+<Steps>
+1. Add `generateStaticParams` to your post detail page for static generation
+2. Add `<Metadata>` exports to every page — title, description, Open Graph tags
+3. Replace all `<img>` tags with Next.js `<Image>` component
+4. Add `loading.tsx` to async routes to show skeleton UIs
+5. Run Lighthouse in Chrome DevTools — aim for 90+ performance score
+6. Add ISR (`revalidate: 60`) to your list page and verify it re-generates
+</Steps>
+
+### Expected Outcome
+
+✅ All pages have unique, accurate SEO metadata  
+✅ Images served via the Next.js optimization pipeline  
+✅ Lighthouse performance score above 90  
+✅ Understanding of when to statically generate vs server-render  
+
+---
+
+## Project 4 — Vue Mastery: Building a Weather App with Vue.js
+
+> *"Create interactive, reactive user interfaces with Vue's intuitive syntax and structure."*
+
+### What You'll Build
+
+A real-time weather application that fetches live data from a public weather API and displays it with a clean, reactive Vue.js UI. This project proves you can work in Vue — TEQ's second primary framework — not just React.
+
+### Skills Practiced
+
+| Skill | Description |
+|---|---|
+| Vue 3 Composition API | `ref`, `computed`, `watch`, `onMounted` — Vue's equivalent of React hooks |
+| Vue SFCs | Single File Components (`.vue` with `<template>`, `<script>`, `<style>`) |
+| Reactive data binding | `v-model`, `v-if`, `v-for`, `:class`, `@click` |
+| Vue Router | Multi-page navigation in a Vue SPA |
+| API integration | Fetch from a real weather API (e.g. [Open-Meteo](https://open-meteo.com/) — free, no key needed) |
+| Nuxt (stretch goal) | Re-scaffold with Nuxt for SSR and better DX |
+
+<Aside type="tip" title="Backend analogy">
+Vue's Composition API maps almost 1:1 to React hooks: `ref` = `useState`, `computed` = `useMemo`, `watch` = `useEffect`, `onMounted` = `useEffect(() => {}, [])`. If you know React hooks, Vue's Composition API will feel natural within a day.
+</Aside>
+
+### Steps
+
+<Steps>
+1. Scaffold a Vue project: `npm create vite@latest weather-app -- --template vue`
+2. Install Vue Router: `npm install vue-router`
+3. Build a search page — user enters a city name, app fetches coordinates from the Geocoding API
+4. Fetch weather data from the [Open-Meteo API](https://open-meteo.com/) using the coordinates
+5. Display current temperature, wind speed, and a 7-day forecast
+6. Add a second route `/history` that shows previously searched cities (stored in `localStorage`)
+7. Style with TailwindCSS
+</Steps>
+
+### Expected Outcome
+
+✅ A working weather app with real API data  
+✅ Multi-page navigation with Vue Router  
+✅ Reactive UI with Vue 3 Composition API  
+✅ Confidence switching between React and Vue codebases  
+
+---
+
+## Embedded Course
+
+All 4 projects above are drawn from the TEQ official course. Enroll and follow along with the full instructor-led lessons:
+
+<div style="position: relative; width: 100%; padding-top: 62.5%; border-radius: 8px; overflow: hidden; border: 1px solid var(--sl-color-gray-5); margin: 1.5rem 0;">
+  <iframe
+    src="https://eazylearn.teqn.asia/courses/43"
+    title="Code & Craft: Intro to Front-End Development — EazyLearn TEQ"
+    style="position: absolute; inset: 0; width: 100%; height: 100%; border: none;"
+    allow="fullscreen"
+    loading="lazy"
+  ></iframe>
+</div>
+
+<Aside type="note">
+If the iframe does not load, open the course directly: [eazylearn.teqn.asia/courses/43](https://eazylearn.teqn.asia/courses/43)
+</Aside>
+
+---
+
+## What Completing All 4 Projects Proves
+
+| Capability | Proven by |
+|---|---|
+| Can set up a TEQ project from scratch | Project 1 with teq-superplate |
+| Can build features in React | Project 1 — components, state, API, Tailwind |
+| Can build a secure, full-stack Next.js app | Project 2 — CMS with auth |
+| Understands SSR, SSG, and SEO | Project 3 — Next.js performance |
+| Can work in Vue codebases | Project 4 — Vue weather app |
+| Follows TEQ commit and code quality standards | All projects — ESLint, Prettier, commitlint |
+
+---
+
+## Related Pages
+
+- [Code & Craft Course Details →](/concepts/code-craft/)
+- [TEQ Tools — Toolchain Setup →](/concepts/teq-tools/)
+- [Intermediate Roadmap →](/roadmap/intermediate/)
+- [Best Practices →](/best-practices/)
