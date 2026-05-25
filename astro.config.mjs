@@ -59,6 +59,10 @@ export default defineConfig({
           label: '🎯 Practice: Real TEQ FE Dev',
           link: '/practice/',
         },
+        {
+          label: '📚 Reference',
+          link: '/references/',
+        },
       ],
     }),
   ],

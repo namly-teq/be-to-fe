@@ -4,10 +4,16 @@ description: What is frontend, how do browsers work, and how does frontend talk 
 ---
 
 import { Aside, Steps } from '@astrojs/starlight/components';
+import { Image } from 'astro:assets';
+import Restaurant from "../../../assets/images/restaurant.jpeg"
+import FEandBE from "../../../assets/images/fe-and-be.png"
+
 
 ## Frontend vs Backend — What's the Difference?
 
 As a backend developer, you're used to working in an environment you control: servers, databases, file systems. Frontend is different — your code runs **inside the user's browser**, an environment you don't control.
+
+<Image src={FEandBE} alt="eg" />
 
 | Aspect | Backend | Frontend |
 |---|---|---|
@@ -30,9 +36,11 @@ As a backend developer, you're used to working in an environment you control: se
 - Persistence (databases, file storage)
 - Exposing APIs that frontend consumes
 
+
 <Aside type="tip" title="Analogy">
 Think of backend as a **restaurant kitchen** and frontend as the **dining room + menu**. The kitchen processes orders and produces food (data). The dining room presents it beautifully and handles the customer interaction. Neither is more important — both need to work together.
 </Aside>
+<Image src={Restaurant} alt={"eg"} />
 
 ---
 
